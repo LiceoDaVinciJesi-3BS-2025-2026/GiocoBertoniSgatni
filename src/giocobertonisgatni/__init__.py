@@ -23,7 +23,14 @@ def main() -> None:
         
         # serve ad aggiornare il contenuto dello schermo
         pygame.display.flip()
-    
+        
+        
+        
+        
+        
+        
+        
+        
     pygame.quit()
 
 if __name__ == "__main__":
