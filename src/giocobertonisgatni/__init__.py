@@ -2,7 +2,6 @@
 import pygame
 
 def main() -> None:
-    print("Hello from giocobertonisgatni!")
     
     pygame.init()
     
@@ -13,6 +12,7 @@ def main() -> None:
     running = True
     
     while running:
+        
         # serve a gestire la X di chiusura in alto
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -23,7 +23,6 @@ def main() -> None:
         
         # serve ad aggiornare il contenuto dello schermo
         pygame.display.flip()
-        
         
         
         
