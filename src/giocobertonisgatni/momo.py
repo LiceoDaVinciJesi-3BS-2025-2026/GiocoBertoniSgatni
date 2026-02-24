@@ -85,7 +85,7 @@ def start_screen(screen):
         screen.blit(instruction_text, instruction_rect)
        
         credits_font = pygame.font.Font(None, 30)
-        credits_text = credits_font.render("Usa le FRECCE per muoverti", True, (120, 120, 120))
+        credits_text = credits_font.render("Usa le FRECCE per muoverti | SPAZIO per attaccare", True, (120, 120, 120))
         credits_rect = credits_text.get_rect(center=(960, 900))
         screen.blit(credits_text, credits_rect)
        
@@ -233,6 +233,18 @@ def game_loop(screen, level_number):
     walk_frames = load_spritesheet("knight-removebg-preview-spritesheet.png", ww // 5, wh // 5, 5, 5)
     walk_frames = [pygame.transform.scale(f, (100, 100)) for f in walk_frames]
 
+    #SPRITESHEET CAMMINATA VERSO IL BASSO (5x5) - NUOVO!
+    sheet_walk_down = pygame.image.load("knight-spritesheet(1)_.png")
+    wd, hd = sheet_walk_down.get_size()
+    walk_down_frames = load_spritesheet("knight-spritesheet(1)_.png", wd // 5, hd // 5, 5, 5)
+    walk_down_frames = [pygame.transform.scale(f, (100, 100)) for f in walk_down_frames]
+    
+    # CARICA SPRITESHEET ASCIA (5x5 = 25 frame di rotazione)
+    sheet_axe = pygame.image.load("ascia-spritesheet.png")
+    axe_w, axe_h = sheet_axe.get_size()
+    axe_frames = load_spritesheet("ascia-spritesheet.png", axe_w // 5, axe_h // 5, 5, 5)
+    axe_frames = [pygame.transform.scale(f, (60, 60)) for f in axe_frames]  # più piccola per stare in mano
+
     knight_x = 960 - 50
     knight_y = 510 - 50
     knight_speed = 5
@@ -245,13 +257,19 @@ def game_loop(screen, level_number):
     walk_timer = 0
     walk_speed = 4
 
+    # SISTEMA ATTACCO
+    is_attacking = False
+    attack_frame_index = 0
+    attack_timer = 0
+    attack_speed = 2  # velocità animazione attacco
+    attack_cooldown = 0
+    
     is_moving = False
     direction = "down"
     flip_left = False
 
     # HITBOX PER OGNI LIVELLO
     if level_number == 1:
-        # LIVELLO 1 - FORESTA OSCURA
         obstacles = [
             pygame.Rect(564, -22, 465, 287),
             pygame.Rect(1, 1, 563, 506),
@@ -272,7 +290,6 @@ def game_loop(screen, level_number):
         ]
    
     elif level_number == 2:
-        # LIVELLO 2 - VILLAGGIO ASSEDIATO
         obstacles = [
             pygame.Rect(0, -7, 558, 541),
             pygame.Rect(553, -11, 488, 262),
@@ -289,7 +306,6 @@ def game_loop(screen, level_number):
         ]
    
     else:  # level_number == 3
-        # LIVELLO 3 - CASTELLO DEL RE
         obstacles = [
             pygame.Rect(772, 792, 178, 257),
             pygame.Rect(1223, 790, 175, 259),
@@ -330,13 +346,24 @@ def game_loop(screen, level_number):
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     return True
+                
+                # ATTACCO con SPAZIO
+                if event.key == pygame.K_SPACE and not is_attacking and attack_cooldown == 0:
+                    is_attacking = True
+                    attack_frame_index = 0
+                    attack_timer = 0
        
+        # Diminuisci cooldown attacco
+        if attack_cooldown > 0:
+            attack_cooldown -= 1
+
         old_x = knight_x
         old_y = knight_y
        
+        # MOVIMENTO - ORA FUNZIONA ANCHE DURANTE ATTACCO
         keys = pygame.key.get_pressed()
         is_moving = False
-       
+        
         if keys[pygame.K_LEFT]:
             knight_x -= knight_speed
             direction = "left"
@@ -359,6 +386,18 @@ def game_loop(screen, level_number):
             direction = "down"
             is_moving = True
 
+        # ANIMAZIONE ATTACCO
+        if is_attacking:
+            attack_timer += 1
+            if attack_timer >= attack_speed:
+                attack_timer = 0
+                attack_frame_index += 1
+                if attack_frame_index >= len(axe_frames):
+                    is_attacking = False
+                    attack_frame_index = 0
+                    attack_cooldown = 20
+
+        # ANIMAZIONI MOVIMENTO/IDLE
         if not is_moving:
             walk_frame_index = 0
             walk_timer = 0
@@ -387,23 +426,46 @@ def game_loop(screen, level_number):
        
         screen.blit(background, (0, 0))
        
+        # DISEGNA CAVALIERE + ASCIA IN MANO
         if not is_moving:
+            # IDLE
             screen.blit(idle_frames[idle_frame_index], (knight_x, knight_y))
-
         elif direction in ("left", "right"):
+            # CAMMINATA LATERALE
             frame = pygame.transform.flip(walk_frames[walk_frame_index], flip_left, False)
             screen.blit(frame, (knight_x, knight_y))
-
         elif direction == "up":
             bob = int(math.sin(pygame.time.get_ticks() * 0.01) * 4)
             screen.blit(knight_back, (knight_x, knight_y + bob))
-
         elif direction == "down":
-            bob = int(math.sin(pygame.time.get_ticks() * 0.01) * 4)
-            screen.blit(knight_front, (knight_x, knight_y + bob))
+            # CAMMINATA GIÙ - ANIMAZIONE VERA!
+            screen.blit(walk_down_frames[walk_frame_index], (knight_x, knight_y))
+        
+        
+        # DISEGNA ASCIA IN MANO (sempre visibile se attaccando)
+        if is_attacking:
+            # Posizione ascia in base alla direzione
+            if direction == "right":
+                axe_x = knight_x + 55
+                axe_y = knight_y + 30
+                current_axe = axe_frames[attack_frame_index]
+            elif direction == "left":
+                axe_x = knight_x - 15
+                axe_y = knight_y + 30
+                current_axe = pygame.transform.flip(axe_frames[attack_frame_index], True, False)
+            elif direction == "up":
+                axe_x = knight_x + 20
+                axe_y = knight_y - 10
+                current_axe = pygame.transform.rotate(axe_frames[attack_frame_index], 90)
+            else:  # down
+                axe_x = knight_x + 20
+                axe_y = knight_y + 50
+                current_axe = pygame.transform.rotate(axe_frames[attack_frame_index], -90)
+            
+            screen.blit(current_axe, (axe_x, axe_y))
        
         font = pygame.font.Font(None, 36)
-        level_text = font.render(f"LIVELLO {level_number} | ESC = Menu", True, (255, 255, 255))
+        level_text = font.render(f"LIVELLO {level_number} | ESC = Menu | SPAZIO = Attacco", True, (255, 255, 255))
         screen.blit(level_text, (10, 10))
        
         pygame.display.flip()
@@ -430,4 +492,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
