@@ -1,3 +1,4 @@
+
 # progettone pazzo sgravato
 import pygame
 import math
@@ -85,7 +86,7 @@ def start_screen(screen):
         screen.blit(instruction_text, instruction_rect)
        
         credits_font = pygame.font.Font(None, 30)
-        credits_text = credits_font.render("Usa le FRECCE per muoverti", True, (120, 120, 120))
+        credits_text = credits_font.render("Usa le FRECCE per muoverti | SPAZIO per attaccare", True, (120, 120, 120))
         credits_rect = credits_text.get_rect(center=(960, 900))
         screen.blit(credits_text, credits_rect)
        
@@ -95,23 +96,19 @@ def start_screen(screen):
 def level_selection_screen(screen):
     """Schermata di selezione livelli - ritorna il numero del livello scelto (1, 2, o 3)"""
    
-    # carica le miniature delle mappe
     forest_map = pygame.image.load("foresta_livello_1.jpg")
     village_map = pygame.image.load("villaggio_livello_2.jpg")
     castle_map = pygame.image.load("castello_livello_3.jpg")
    
-    # scala le miniature per i box di selezione
     preview_size = (500, 350)
     forest_preview = pygame.transform.scale(forest_map, preview_size)
     village_preview = pygame.transform.scale(village_map, preview_size)
     castle_preview = pygame.transform.scale(castle_map, preview_size)
    
-    # posizioni dei box livelli
     level1_rect = pygame.Rect(100, 250, 500, 500)
     level2_rect = pygame.Rect(710, 250, 500, 500)
     level3_rect = pygame.Rect(1320, 250, 500, 500)
    
-    # font
     title_font = pygame.font.Font(None, 100)
     level_font = pygame.font.Font(None, 60)
     desc_font = pygame.font.Font(None, 35)
@@ -129,11 +126,11 @@ def level_selection_screen(screen):
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = event.pos
                 if level1_rect.collidepoint(mouse_pos):
-                    return 1  # livello foresta
+                    return 1
                 elif level2_rect.collidepoint(mouse_pos):
-                    return 2  # livello villaggio
+                    return 2
                 elif level3_rect.collidepoint(mouse_pos):
-                    return 3  # livello castello
+                    return 3
            
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_1:
@@ -145,22 +142,19 @@ def level_selection_screen(screen):
        
         mouse_pos = pygame.mouse.get_pos()
        
-        # sfondo
         screen.fill((20, 20, 30))
        
-        # titolo
         title_text = title_font.render("SELEZIONA IL LIVELLO", True, (255, 215, 0))
         title_rect = title_text.get_rect(center=(960, 120))
         screen.blit(title_text, title_rect)
        
-        # ===== LIVELLO 1 - FORESTA =====
+        # LIVELLO 1
         hover1 = level1_rect.collidepoint(mouse_pos)
         border_color1 = (255, 215, 0) if hover1 else (100, 100, 100)
         border_width1 = 5 if hover1 else 3
        
         pygame.draw.rect(screen, (40, 40, 50), level1_rect, border_radius=10)
         pygame.draw.rect(screen, border_color1, level1_rect, border_width1, border_radius=10)
-       
         screen.blit(forest_preview, (level1_rect.x, level1_rect.y))
        
         level1_title = level_font.render("LIVELLO 1", True, (100, 255, 100))
@@ -171,14 +165,13 @@ def level_selection_screen(screen):
         screen.blit(level1_name, (level1_rect.centerx - level1_name.get_width()//2, level1_rect.y + 430))
         screen.blit(level1_diff, (level1_rect.centerx - level1_diff.get_width()//2, level1_rect.y + 465))
        
-        # ===== LIVELLO 2 - VILLAGGIO =====
+        # LIVELLO 2
         hover2 = level2_rect.collidepoint(mouse_pos)
         border_color2 = (255, 215, 0) if hover2 else (100, 100, 100)
         border_width2 = 5 if hover2 else 3
        
         pygame.draw.rect(screen, (40, 40, 50), level2_rect, border_radius=10)
         pygame.draw.rect(screen, border_color2, level2_rect, border_width2, border_radius=10)
-       
         screen.blit(village_preview, (level2_rect.x, level2_rect.y))
        
         level2_title = level_font.render("LIVELLO 2", True, (255, 200, 100))
@@ -189,14 +182,13 @@ def level_selection_screen(screen):
         screen.blit(level2_name, (level2_rect.centerx - level2_name.get_width()//2, level2_rect.y + 430))
         screen.blit(level2_diff, (level2_rect.centerx - level2_diff.get_width()//2, level2_rect.y + 465))
        
-        # ===== LIVELLO 3 - CASTELLO =====
+        # LIVELLO 3
         hover3 = level3_rect.collidepoint(mouse_pos)
         border_color3 = (255, 215, 0) if hover3 else (100, 100, 100)
         border_width3 = 5 if hover3 else 3
        
         pygame.draw.rect(screen, (40, 40, 50), level3_rect, border_radius=10)
         pygame.draw.rect(screen, border_color3, level3_rect, border_width3, border_radius=10)
-       
         screen.blit(castle_preview, (level3_rect.x, level3_rect.y))
        
         level3_title = level_font.render("LIVELLO 3", True, (255, 100, 100))
@@ -207,7 +199,6 @@ def level_selection_screen(screen):
         screen.blit(level3_name, (level3_rect.centerx - level3_name.get_width()//2, level3_rect.y + 430))
         screen.blit(level3_diff, (level3_rect.centerx - level3_diff.get_width()//2, level3_rect.y + 465))
        
-        # istruzioni
         instruction_font = pygame.font.Font(None, 40)
         instruction = instruction_font.render("Clicca su un livello o premi 1, 2, 3", True, (150, 150, 150))
         screen.blit(instruction, (960 - instruction.get_width()//2, 850))
@@ -218,7 +209,7 @@ def level_selection_screen(screen):
 def game_loop(screen, level_number):
     """Loop di gioco principale - riceve il numero del livello"""
    
-    # carica la mappa corretta in base al livello scelto
+    # Carica la mappa corretta in base al livello scelto
     if level_number == 1:
         background = pygame.image.load("foresta_livello_1.jpg")
     elif level_number == 2:
@@ -228,30 +219,37 @@ def game_loop(screen, level_number):
    
     background = pygame.transform.scale(background, (1920, 1020))
    
-    # carica le immagini del cavaliere per su/giù
-    knight_front = pygame.image.load("knight-removebg-preview.png")
     knight_back = pygame.image.load("knight_180_degrees_nosfondo.png")
-    knight_front = pygame.transform.scale(knight_front, (100, 100))
     knight_back = pygame.transform.scale(knight_back, (100, 100))
 
-    # carica spritesheet IDLE
+    # SPRITESHEET IDLE (5x5)
     sheet_idle = pygame.image.load("knight-spritesheet.png")
     w, h = sheet_idle.get_size()
     idle_frames = load_spritesheet("knight-spritesheet.png", w // 5, h // 5, 5, 5)
     idle_frames = [pygame.transform.scale(f, (100, 100)) for f in idle_frames]
 
-    # carica spritesheet CAMMINATA LATERALE
+    # SPRITESHEET CAMMINATA LATERALE (5x5)
     sheet_walk = pygame.image.load("knight-removebg-preview-spritesheet.png")
     ww, wh = sheet_walk.get_size()
     walk_frames = load_spritesheet("knight-removebg-preview-spritesheet.png", ww // 5, wh // 5, 5, 5)
     walk_frames = [pygame.transform.scale(f, (100, 100)) for f in walk_frames]
 
-    # posizione iniziale del cavaliere
+    # SPRITESHEET CAMMINATA VERSO IL BASSO (5x5) - NUOVO!
+    sheet_walk_down = pygame.image.load("knight-moovingspritesheet_.png")
+    wd, hd = sheet_walk_down.get_size()
+    walk_down_frames = load_spritesheet("knight-moovingspritesheet_.png", wd // 5, hd // 5, 5, 5)
+    walk_down_frames = [pygame.transform.scale(f, (100, 100)) for f in walk_down_frames]
+
+    # CARICA SPRITESHEET ASCIA (5x5 = 25 frame di rotazione)
+    sheet_axe = pygame.image.load("ascia-spritesheet.png")
+    axe_w, axe_h = sheet_axe.get_size()
+    axe_frames = load_spritesheet("ascia-spritesheet.png", axe_w // 5, axe_h // 5, 5, 5)
+    axe_frames = [pygame.transform.scale(f, (60, 60)) for f in axe_frames]
+
     knight_x = 960 - 50
     knight_y = 510 - 50
     knight_speed = 5
 
-    # STATO ANIMAZIONE
     idle_frame_index = 0
     idle_timer = 0
     idle_speed = 6
@@ -260,12 +258,81 @@ def game_loop(screen, level_number):
     walk_timer = 0
     walk_speed = 4
 
+    # SISTEMA ATTACCO
+    is_attacking = False
+    attack_frame_index = 0
+    attack_timer = 0
+    attack_speed = 2
+    attack_cooldown = 0
+    
     is_moving = False
     direction = "down"
     flip_left = False
 
-    # COLLISIONI - per ora vuote, le aggiungerai dopo
-    obstacles = []
+    # HITBOX PER OGNI LIVELLO
+    if level_number == 1:
+        obstacles = [
+            pygame.Rect(564, -22, 465, 287),
+            pygame.Rect(1, 1, 563, 506),
+            pygame.Rect(561, 262, 60, 234),
+            pygame.Rect(619, 263, 106, 79),
+            pygame.Rect(790, 264, 78, 77),
+            pygame.Rect(0, 607, 619, 442),
+            pygame.Rect(620, 736, 42, 91),
+            pygame.Rect(666, 769, 351, 60),
+            pygame.Rect(617, 829, 400, 216),
+            pygame.Rect(1172, 774, 393, 275),
+            pygame.Rect(1497, 611, 422, 160),
+            pygame.Rect(1565, 772, 354, 274),
+            pygame.Rect(1489, 226, 430, 273),
+            pygame.Rect(1414, 258, 75, 76),
+            pygame.Rect(1159, -30, 319, 285),
+            pygame.Rect(1475, -18, 444, 242)
+        ]
+   
+    elif level_number == 2:
+        obstacles = [
+            pygame.Rect(0, -7, 558, 541),
+            pygame.Rect(553, -11, 488, 262),
+            pygame.Rect(1042, -22, 238, 142),
+            pygame.Rect(1039, -30, 880, 277),
+            pygame.Rect(1525, 246, 394, 290),
+            pygame.Rect(0, 534, 199, 515),
+            pygame.Rect(193, 623, 357, 426),
+            pygame.Rect(549, 888, 491, 161),
+            pygame.Rect(1144, 891, 775, 158),
+            pygame.Rect(1537, 613, 382, 273),
+            pygame.Rect(1817, 531, 102, 83),
+            pygame.Rect(1015, 466, 138, 170)
+        ]
+   
+    else:  # level_number == 3
+        obstacles = [
+            pygame.Rect(772, 792, 178, 257),
+            pygame.Rect(1223, 790, 175, 259),
+            pygame.Rect(1397, 877, 434, 172),
+            pygame.Rect(1744, 675, 175, 198),
+            pygame.Rect(1773, -30, 146, 704),
+            pygame.Rect(1225, -30, 546, 337),
+            pygame.Rect(0, -30, 1222, 318),
+            pygame.Rect(0, 286, 275, 272),
+            pygame.Rect(0, 557, 261, 492),
+            pygame.Rect(260, 879, 577, 170),
+            pygame.Rect(301, 390, 50, 162),
+            pygame.Rect(446, 337, 17, 76),
+            pygame.Rect(582, 348, 12, 62),
+            pygame.Rect(891, 342, 56, 164),
+            pygame.Rect(754, 285, 195, 61),
+            pygame.Rect(1227, 305, 184, 46),
+            pygame.Rect(1226, 349, 59, 157),
+            pygame.Rect(1693, 389, 77, 168),
+            pygame.Rect(1705, 741, 15, 67),
+            pygame.Rect(1575, 801, 14, 74),
+            pygame.Rect(1571, 354, 20, 54),
+            pygame.Rect(447, 812, 17, 60),
+            pygame.Rect(316, 750, 18, 59),
+            pygame.Rect(1045, 285, 86, 60)
+        ]
    
     clock = pygame.time.Clock()
     running = True
@@ -275,19 +342,26 @@ def game_loop(screen, level_number):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-                return False  # chiude il gioco
+                return False
            
-            # premi ESC per tornare al menu livelli
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    return True  # torna al menu selezione
+                    return True
+                
+                if event.key == pygame.K_SPACE and not is_attacking and attack_cooldown == 0:
+                    is_attacking = True
+                    attack_frame_index = 0
+                    attack_timer = 0
        
+        if attack_cooldown > 0:
+            attack_cooldown -= 1
+
         old_x = knight_x
         old_y = knight_y
        
         keys = pygame.key.get_pressed()
         is_moving = False
-       
+        
         if keys[pygame.K_LEFT]:
             knight_x -= knight_speed
             direction = "left"
@@ -309,6 +383,16 @@ def game_loop(screen, level_number):
             knight_y += knight_speed
             direction = "down"
             is_moving = True
+
+        if is_attacking:
+            attack_timer += 1
+            if attack_timer >= attack_speed:
+                attack_timer = 0
+                attack_frame_index += 1
+                if attack_frame_index >= len(axe_frames):
+                    is_attacking = False
+                    attack_frame_index = 0
+                    attack_cooldown = 20
 
         if not is_moving:
             walk_frame_index = 0
@@ -338,24 +422,45 @@ def game_loop(screen, level_number):
        
         screen.blit(background, (0, 0))
        
+        # DISEGNA CAVALIERE
         if not is_moving:
+            # IDLE
             screen.blit(idle_frames[idle_frame_index], (knight_x, knight_y))
-
         elif direction in ("left", "right"):
+            # CAMMINATA LATERALE
             frame = pygame.transform.flip(walk_frames[walk_frame_index], flip_left, False)
             screen.blit(frame, (knight_x, knight_y))
-
         elif direction == "up":
+            # CAMMINATA SU (bob per ora, finché non hai spritesheet)
             bob = int(math.sin(pygame.time.get_ticks() * 0.01) * 4)
             screen.blit(knight_back, (knight_x, knight_y + bob))
-
         elif direction == "down":
-            bob = int(math.sin(pygame.time.get_ticks() * 0.01) * 4)
-            screen.blit(knight_front, (knight_x, knight_y + bob))
+            # CAMMINATA GIÙ - ANIMAZIONE VERA!
+            screen.blit(walk_down_frames[walk_frame_index], (knight_x, knight_y))
+        
+        # DISEGNA ASCIA IN MANO
+        if is_attacking:
+            if direction == "right":
+                axe_x = knight_x + 55
+                axe_y = knight_y + 30
+                current_axe = axe_frames[attack_frame_index]
+            elif direction == "left":
+                axe_x = knight_x - 15
+                axe_y = knight_y + 30
+                current_axe = pygame.transform.flip(axe_frames[attack_frame_index], True, False)
+            elif direction == "up":
+                axe_x = knight_x + 20
+                axe_y = knight_y - 10
+                current_axe = pygame.transform.rotate(axe_frames[attack_frame_index], 90)
+            else:  # down
+                axe_x = knight_x + 20
+                axe_y = knight_y + 50
+                current_axe = pygame.transform.rotate(axe_frames[attack_frame_index], -90)
+            
+            screen.blit(current_axe, (axe_x, axe_y))
        
-        # info livello
         font = pygame.font.Font(None, 36)
-        level_text = font.render(f"LIVELLO {level_number} | X: {int(knight_x)}, Y: {int(knight_y)} | ESC = Menu", True, (255, 255, 255))
+        level_text = font.render(f"LIVELLO {level_number} | ESC = Menu | SPAZIO = Attacco", True, (255, 255, 255))
         screen.blit(level_text, (10, 10))
        
         pygame.display.flip()
@@ -369,19 +474,12 @@ def main() -> None:
     screen = pygame.display.set_mode((1920, 1020))
     pygame.display.set_caption("Templar's Trial")
    
-    # MOSTRA SCHERMATA DI AVVIO
     start_screen(screen)
    
-    # LOOP PRINCIPALE DEL GIOCO
     game_running = True
     while game_running:
-        # MOSTRA MENU SELEZIONE LIVELLI
         selected_level = level_selection_screen(screen)
-       
-        # AVVIA IL LIVELLO SCELTO
         continue_playing = game_loop(screen, selected_level)
-       
-        # se game_loop ritorna False, chiudi tutto
         if not continue_playing:
             game_running = False
    
