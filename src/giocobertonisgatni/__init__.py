@@ -2,12 +2,28 @@
 import pygame
 import math
 
+# ==============================================================================
+# FUNZIONE: load_spritesheet
+# Serve per ritagliare i singoli frame da uno spritesheet (una grande immagine
+# che contiene tutte le pose di un'animazione disposte in una griglia).
+#
+# Parametri:
+#   path         → percorso del file immagine
+#   frame_width  → larghezza di ogni singolo frame (in pixel)
+#   frame_height → altezza di ogni singolo frame (in pixel)
+#   cols         → numero di colonne nella griglia
+#   rows         → numero di righe nella griglia
+#
+# Ritorna una lista di Surface pygame, ognuna contenente un frame dell'animazione.
+# L'ordine è: riga per riga, da sinistra a destra.
+# ==============================================================================
 def load_spritesheet(path, frame_width, frame_height, cols, rows):
     """Ritaglia tutti i frame dallo spritesheet"""
-    sheet = pygame.image.load(path).convert_alpha()
+    sheet = pygame.image.load(path).convert_alpha()  # Carica con trasparenza
     frames = []
     for row in range(rows):
         for col in range(cols):
+            # subsurface() estrae un rettangolo dall'immagine originale senza copiarla
             frame = sheet.subsurface(pygame.Rect(
                 col * frame_width,
                 row * frame_height,
@@ -17,14 +33,26 @@ def load_spritesheet(path, frame_width, frame_height, cols, rows):
             frames.append(frame)
     return frames
 
+
+# ==============================================================================
+# FUNZIONE: start_screen
+# Mostra la schermata iniziale del gioco con titolo, sottotitolo e bottone GIOCA.
+#
+# Usa un effetto "bob" sul titolo (oscillazione verticale via math.sin)
+# per dare movimento alla UI.
+#
+# Il giocatore può avanzare cliccando il bottone oppure premendo SPAZIO/INVIO.
+# La funzione blocca l'esecuzione finché l'utente non sceglie di partire.
+# ==============================================================================
 def start_screen(screen):
     """Schermata di avvio del gioco"""
    
     background = pygame.image.load("immagini/Scene_Overview.png")
     background = pygame.transform.scale(background, (1920, 1020))
    
+    # Overlay semitrasparente nero sopra lo sfondo per far risaltare il testo
     overlay = pygame.Surface((1920, 1020))
-    overlay.set_alpha(150)
+    overlay.set_alpha(150)  # 0 = invisibile, 255 = opaco
     overlay.fill((0, 0, 0))
    
     title_font = pygame.font.Font(None, 120)
@@ -32,7 +60,7 @@ def start_screen(screen):
     button_font = pygame.font.Font(None, 50)
    
     button_rect = pygame.Rect(760, 500, 400, 100)
-    title_bob = 0
+    title_bob = 0  # Offset verticale per l'animazione del titolo
    
     clock = pygame.time.Clock()
     waiting = True
@@ -44,14 +72,17 @@ def start_screen(screen):
                 pygame.quit()
                 exit()
            
+            # Click sul bottone GIOCA
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if button_rect.collidepoint(event.pos):
                     waiting = False
            
+            # Scorciatoia da tastiera per avviare
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
                     waiting = False
        
+        # Calcola offset bobbing: oscillazione sinusoidale basata sul tempo in ms
         title_bob = math.sin(pygame.time.get_ticks() * 0.003) * 10
        
         screen.blit(background, (0, 0))
@@ -65,6 +96,7 @@ def start_screen(screen):
         subtitle_rect = subtitle_text.get_rect(center=(960, 400))
         screen.blit(subtitle_text, subtitle_rect)
        
+        # Hover effect: il bottone cambia colore quando ci passa il mouse sopra
         mouse_pos = pygame.mouse.get_pos()
         if button_rect.collidepoint(mouse_pos):
             button_color = (255, 215, 0)
@@ -74,7 +106,7 @@ def start_screen(screen):
             text_color = (255, 255, 255)
        
         pygame.draw.rect(screen, button_color, button_rect, border_radius=15)
-        pygame.draw.rect(screen, (255, 215, 0), button_rect, 3, border_radius=15)
+        pygame.draw.rect(screen, (255, 215, 0), button_rect, 3, border_radius=15)  # Bordo dorato
        
         play_text = button_font.render("GIOCA", True, text_color)
         play_rect = play_text.get_rect(center=button_rect.center)
@@ -92,18 +124,31 @@ def start_screen(screen):
         pygame.display.flip()
         clock.tick(60)
 
+
+# ==============================================================================
+# FUNZIONE: level_selection_screen
+# Mostra la schermata di selezione del livello con anteprima dei 3 livelli.
+#
+# L'utente può cliccare su uno dei 3 riquadri oppure premere i tasti 1, 2, 3.
+# La funzione ritorna il numero del livello scelto (1, 2 o 3), che viene
+# poi passato a game_loop() per caricare la mappa e gli ostacoli corretti.
+# ==============================================================================
 def level_selection_screen(screen):
     """Schermata di selezione livelli - ritorna il numero del livello scelto (1, 2, o 3)"""
    
+    # Carica le anteprime dei 3 livelli
     forest_map = pygame.image.load("immagini/foresta_livello_1.jpg")
     village_map = pygame.image.load("immagini/villaggio_livello_2.jpg")
     castle_map = pygame.image.load("immagini/castello_livello_3.jpg")
    
+    # Ridimensiona tutte le anteprime alla stessa dimensione
     preview_size = (500, 350)
     forest_preview = pygame.transform.scale(forest_map, preview_size)
     village_preview = pygame.transform.scale(village_map, preview_size)
     castle_preview = pygame.transform.scale(castle_map, preview_size)
    
+    # Rettangoli cliccabili per ogni livello (più grandi delle anteprime
+    # perché includono anche il testo descrittivo sotto)
     level1_rect = pygame.Rect(100, 250, 500, 500)
     level2_rect = pygame.Rect(710, 250, 500, 500)
     level3_rect = pygame.Rect(1320, 250, 500, 500)
@@ -124,6 +169,7 @@ def level_selection_screen(screen):
            
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = event.pos
+                # Controlla su quale riquadro ha cliccato l'utente
                 if level1_rect.collidepoint(mouse_pos):
                     return 1
                 elif level2_rect.collidepoint(mouse_pos):
@@ -131,6 +177,7 @@ def level_selection_screen(screen):
                 elif level3_rect.collidepoint(mouse_pos):
                     return 3
            
+            # Selezione rapida da tastiera
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_1:
                     return 1
@@ -147,7 +194,8 @@ def level_selection_screen(screen):
         title_rect = title_text.get_rect(center=(960, 120))
         screen.blit(title_text, title_rect)
        
-        # LIVELLO 1
+        # --- LIVELLO 1 ---
+        # Il bordo diventa dorato e più spesso quando il mouse è sopra (hover effect)
         hover1 = level1_rect.collidepoint(mouse_pos)
         border_color1 = (255, 215, 0) if hover1 else (100, 100, 100)
         border_width1 = 5 if hover1 else 3
@@ -164,7 +212,7 @@ def level_selection_screen(screen):
         screen.blit(level1_name, (level1_rect.centerx - level1_name.get_width()//2, level1_rect.y + 430))
         screen.blit(level1_diff, (level1_rect.centerx - level1_diff.get_width()//2, level1_rect.y + 465))
        
-        # LIVELLO 2
+        # --- LIVELLO 2 ---
         hover2 = level2_rect.collidepoint(mouse_pos)
         border_color2 = (255, 215, 0) if hover2 else (100, 100, 100)
         border_width2 = 5 if hover2 else 3
@@ -181,7 +229,7 @@ def level_selection_screen(screen):
         screen.blit(level2_name, (level2_rect.centerx - level2_name.get_width()//2, level2_rect.y + 430))
         screen.blit(level2_diff, (level2_rect.centerx - level2_diff.get_width()//2, level2_rect.y + 465))
        
-        # LIVELLO 3
+        # --- LIVELLO 3 ---
         hover3 = level3_rect.collidepoint(mouse_pos)
         border_color3 = (255, 215, 0) if hover3 else (100, 100, 100)
         border_width3 = 5 if hover3 else 3
@@ -205,10 +253,30 @@ def level_selection_screen(screen):
         pygame.display.flip()
         clock.tick(60)
 
+
+# ==============================================================================
+# FUNZIONE: game_loop
+# È il cuore del gioco. Gestisce tutta la logica di gameplay per il livello scelto.
+#
+# Cosa fa:
+#   - Carica la mappa di sfondo e tutti gli spritesheet del cavaliere e dell'ascia
+#   - Gestisce il movimento del personaggio con le frecce direzionali
+#   - Seleziona l'animazione giusta in base alla direzione di movimento
+#   - Gestisce l'attacco con SPAZIO (con cooldown per non spammare)
+#   - Controlla le collisioni con gli ostacoli (rettangoli invisibili sulla mappa)
+#   - Tiene il personaggio nei limiti dello schermo
+#   - Disegna tutto a ogni frame: sfondo, personaggio, ascia, HUD
+#
+# Parametri:
+#   screen       → la Surface principale di pygame su cui disegnare
+#   level_number → il livello scelto (1, 2 o 3), determina mappa e ostacoli
+#
+# Ritorna True se il giocatore preme ESC (torna al menu), False se chiude il gioco.
+# ==============================================================================
 def game_loop(screen, level_number):
     """Loop di gioco principale"""
    
-    # Carica mappa
+    # ---- CARICAMENTO MAPPA ----
     if level_number == 1:
         background = pygame.image.load("immagini/foresta_livello_1.jpg")
     elif level_number == 2:
@@ -218,49 +286,58 @@ def game_loop(screen, level_number):
    
     background = pygame.transform.scale(background, (1920, 1020))
    
-    # Carica sprite statiche
+    # ---- CARICAMENTO SPRITE E ANIMAZIONI ----
+
+    # Sprite statica del cavaliere visto da dietro (non usata nell'animazione attuale,
+    # ma disponibile per usi futuri o cutscene)
     knight_back = pygame.image.load("personaggio/knight_180_degrees_nosfondo.png")
     knight_back = pygame.transform.scale(knight_back, (100, 100))
 
-    # IDLE spritesheet (5x5)
+    # Animazione IDLE (fermo): griglia 5 colonne x 5 righe = 25 frame
+    # La dimensione di ogni frame si calcola dividendo l'immagine totale per il numero di celle
     sheet_idle = pygame.image.load("personaggio/knight-spritesheet.png")
     w, h = sheet_idle.get_size()
     idle_frames = load_spritesheet("personaggio/knight-spritesheet.png", w // 5, h // 5, 5, 5)
     idle_frames = [pygame.transform.scale(f, (100, 100)) for f in idle_frames]
 
-    # WALK SIDE spritesheet (5x5)
+    # Animazione CAMMINATA LATERALE (sinistra/destra): griglia 5x5
+    # Il flip orizzontale gestirà la direzione sinistra (vedi più avanti nel draw)
     sheet_walk_side = pygame.image.load("personaggio/knight-removebg-preview-spritesheet.png")
     ws, hs = sheet_walk_side.get_size()
     walk_side_frames = load_spritesheet("personaggio/knight-removebg-preview-spritesheet.png", ws // 5, hs // 5, 5, 5)
     walk_side_frames = [pygame.transform.scale(f, (100, 100)) for f in walk_side_frames]
 
-    # WALK DOWN spritesheet (5x5)
+    # Animazione CAMMINATA GIÙ: griglia 5x5
     sheet_walk_down = pygame.image.load("personaggio/knight_movingspritesheet.png")
     wd, hd = sheet_walk_down.get_size()
     walk_down_frames = load_spritesheet("personaggio/knight_movingspritesheet.png", wd // 5, hd // 5, 5, 5)
     walk_down_frames = [pygame.transform.scale(f, (100, 100)) for f in walk_down_frames]
     
-    # WALK UP spritesheet (5x5)
+    # Animazione CAMMINATA SU: griglia 5x5
     sheet_walk_up = pygame.image.load("personaggio/pisello.png")
     wu, hu = sheet_walk_up.get_size()
     walk_up_frames = load_spritesheet("personaggio/pisello.png", wu // 5, hu // 5, 5, 5)
     walk_up_frames = [pygame.transform.scale(f, (100, 100)) for f in walk_up_frames]
 
-    # AXE spritesheet (5x5)
+    # Animazione ASCIA (attacco): griglia 5x5, dimensione ridotta rispetto al personaggio
     sheet_axe = pygame.image.load("personaggio/ascia-spritesheet.png")
     axe_w, axe_h = sheet_axe.get_size()
     axe_frames = load_spritesheet("personaggio/ascia-spritesheet.png", axe_w // 5, axe_h // 5, 5, 5)
     axe_frames = [pygame.transform.scale(f, (60, 60)) for f in axe_frames]
 
-    # Posizione cavaliere
+    # ---- POSIZIONE INIZIALE DEL CAVALIERE (centro schermo) ----
     knight_x = 960 - 50
     knight_y = 510 - 50
-    knight_speed = 5
+    knight_speed = 5  # Pixel per frame
 
-    # Animazioni
+    # ---- VARIABILI DI STATO ANIMAZIONE ----
+    # Ogni animazione ha un indice (frame corrente), un timer (conta i frame),
+    # e una speed (ogni quanti frame avanzare al frame successivo).
+    # Abbassare speed = animazione più veloce.
+
     idle_frame_index = 0
     idle_timer = 0
-    idle_speed = 6
+    idle_speed = 6  # Cambia frame ogni 6 tick di gioco
 
     walk_side_frame_index = 0
     walk_side_timer = 0
@@ -274,18 +351,21 @@ def game_loop(screen, level_number):
     walk_up_timer = 0
     walk_up_speed = 4
 
-    # Attacco
-    is_attacking = False
-    attack_frame_index = 0
-    attack_timer = 0
-    attack_speed = 2
-    attack_cooldown = 0
+    # ---- VARIABILI DI STATO ATTACCO ----
+    is_attacking = False        # True mentre l'animazione di attacco è in corso
+    attack_frame_index = 0      # Frame corrente dell'animazione ascia
+    attack_timer = 0            # Timer per avanzare i frame dell'ascia
+    attack_speed = 2            # Velocità animazione ascia (più basso = più veloce)
+    attack_cooldown = 0         # Conta i frame prima di poter attaccare di nuovo
     
-    is_moving = False
-    direction = "down"
-    flip_left = False
+    # ---- VARIABILI DI STATO MOVIMENTO ----
+    is_moving = False           # True se il giocatore sta muovendo il personaggio
+    direction = "down"          # Ultima direzione (usata per decidere quale sprite mostrare)
+    flip_left = False           # True se il personaggio guarda a sinistra (flip orizzontale)
 
-    # Ostacoli per livello
+    # ---- OSTACOLI PER LIVELLO ----
+    # Ogni Rect definisce una zona invalicabile sulla mappa.
+    # Sono stati posizionati manualmente per corrispondere agli elementi grafici dello sfondo.
     if level_number == 1:
         obstacles = [
             pygame.Rect(564, -22, 465, 287),
@@ -351,37 +431,49 @@ def game_loop(screen, level_number):
     clock = pygame.time.Clock()
     running = True
    
+    # ================================================================
+    # GAME LOOP PRINCIPALE
+    # Viene eseguito 60 volte al secondo (clock.tick(60)).
+    # Ogni iterazione: gestisce eventi → aggiorna logica → disegna.
+    # ================================================================
     while running:
-        # Eventi
+
+        # ---- GESTIONE EVENTI ----
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-                return False
+                return False  # Chiude il gioco completamente
            
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    return True
+                    return True  # Torna al menu principale
+                # Avvia attacco solo se non sta già attaccando e il cooldown è scaduto
                 if event.key == pygame.K_SPACE and not is_attacking and attack_cooldown == 0:
                     is_attacking = True
                     attack_frame_index = 0
                     attack_timer = 0
        
-        # Cooldown attacco
+        # ---- COOLDOWN ATTACCO ----
+        # Decrementa ogni frame finché non torna a 0 (permette nuovo attacco)
         if attack_cooldown > 0:
             attack_cooldown -= 1
 
-        # Salva posizione precedente
+        # ---- SALVATAGGIO POSIZIONE PRECEDENTE ----
+        # Serve per il sistema di collisioni: se il cavaliere finisce dentro un ostacolo,
+        # lo si riporta alla posizione valida del frame precedente.
         old_x = knight_x
         old_y = knight_y
        
-        # Input movimento
+        # ---- INPUT MOVIMENTO ----
+        # get_pressed() legge tutti i tasti tenuti premuti in questo frame.
+        # Solo una direzione alla volta (if/elif garantisce priorità: sinistra > destra > su > giù).
         keys = pygame.key.get_pressed()
         is_moving = False
         
         if keys[pygame.K_LEFT]:
             knight_x -= knight_speed
             direction = "left"
-            flip_left = True
+            flip_left = True   # La sprite cammina verso destra di default → flippiamo
             is_moving = True
         elif keys[pygame.K_RIGHT]:
             knight_x += knight_speed
@@ -397,7 +489,9 @@ def game_loop(screen, level_number):
             direction = "down"
             is_moving = True
 
-        # Aggiorna animazione attacco
+        # ---- AGGIORNAMENTO ANIMAZIONE ATTACCO ----
+        # Avanza di un frame ogni `attack_speed` tick.
+        # Quando finisce tutti i frame, termina l'attacco e avvia il cooldown.
         if is_attacking:
             attack_timer += 1
             if attack_timer >= attack_speed:
@@ -406,25 +500,28 @@ def game_loop(screen, level_number):
                 if attack_frame_index >= len(axe_frames):
                     is_attacking = False
                     attack_frame_index = 0
-                    attack_cooldown = 20
+                    attack_cooldown = 20  # ~0.33 secondi a 60 FPS prima del prossimo attacco
 
-        # Aggiorna animazioni movimento/idle
+        # ---- AGGIORNAMENTO ANIMAZIONI MOVIMENTO/IDLE ----
         if not is_moving:
+            # Reset delle animazioni di movimento quando il personaggio si ferma
             walk_side_frame_index = 0
             walk_side_timer = 0
             walk_down_frame_index = 0
             walk_down_timer = 0
-            idle_timer += 1
             walk_up_timer = 0
+            # Avanza l'animazione idle
             idle_timer += 1
             if idle_timer >= idle_speed:
                 idle_timer = 0
                 idle_frame_index = (idle_frame_index + 1) % len(idle_frames)
         else:
+            # Reset idle quando il personaggio si muove
             idle_frame_index = 0
             idle_timer = 0
             
-            # Aggiorna animazione in base alla direzione
+            # Avanza solo l'animazione corrispondente alla direzione attuale,
+            # resettando le altre per evitare che rimangano a metà ciclo
             if direction in ("left", "right"):
                 walk_down_frame_index = 0
                 walk_down_timer = 0
@@ -449,25 +546,34 @@ def game_loop(screen, level_number):
                     walk_up_timer = 0
                     walk_up_frame_index = (walk_up_frame_index + 1) % len(walk_up_frames)
        
-        # Collisioni
+        # ---- COLLISIONI CON OSTACOLI ----
+        # La hitbox del cavaliere è più piccola dello sprite (30px da sinistra, 40px dall'alto)
+        # per avere collisioni più precise e non far "bloccare" il personaggio troppo presto.
         knight_rect = pygame.Rect(knight_x + 30, knight_y + 40, 40, 50)
         for obstacle in obstacles:
             if knight_rect.colliderect(obstacle):
+                # Collisione rilevata: annulla il movimento tornando alla posizione precedente
                 knight_x = old_x
                 knight_y = old_y
-                break
+                break  # Basta trovare un ostacolo, non serve controllare gli altri
        
-        # Limiti schermo
+        # ---- LIMITI DELLO SCHERMO ----
+        # Impedisce al cavaliere di uscire dai bordi della finestra
         knight_x = max(0, min(knight_x, 1820))
         knight_y = max(0, min(knight_y, 920))
        
-        # DISEGNA
+        # ================================================================
+        # RENDERING (disegno a schermo)
+        # L'ordine è importante: prima lo sfondo, poi il personaggio sopra.
+        # ================================================================
         screen.blit(background, (0, 0))
        
-        # Disegna cavaliere in base allo stato
+        # Sceglie quale sprite disegnare in base allo stato corrente
         if not is_moving:
+            # Fermo → idle
             screen.blit(idle_frames[idle_frame_index], (knight_x, knight_y))
         elif direction in ("left", "right"):
+            # Movimento laterale → flip se va a sinistra
             frame = pygame.transform.flip(walk_side_frames[walk_side_frame_index], flip_left, False)
             screen.blit(frame, (knight_x, knight_y))
         elif direction == "up":
@@ -475,37 +581,51 @@ def game_loop(screen, level_number):
         elif direction == "down":
             screen.blit(walk_down_frames[walk_down_frame_index], (knight_x, knight_y))
         
-        # Disegna ascia se attaccando
+        # ---- DISEGNO ASCIA DURANTE L'ATTACCO ----
+        # L'ascia viene posizionata e ruotata in modo diverso a seconda della direzione,
+        # così sembra sempre coerente con la posizione del cavaliere.
         if is_attacking:
             if direction == "right":
-                axe_x = knight_x + 55
+                axe_x = knight_x + 55   # A destra del personaggio
                 axe_y = knight_y + 30
                 current_axe = axe_frames[attack_frame_index]
             elif direction == "left":
-                axe_x = knight_x - 15
+                axe_x = knight_x - 15   # A sinistra del personaggio
                 axe_y = knight_y + 30
                 current_axe = pygame.transform.flip(axe_frames[attack_frame_index], True, False)
             elif direction == "up":
                 axe_x = knight_x + 20
-                axe_y = knight_y - 10
+                axe_y = knight_y - 10   # Sopra il personaggio
                 current_axe = pygame.transform.rotate(axe_frames[attack_frame_index], 90)
-            else:
+            else:  # direction == "down"
                 axe_x = knight_x + 20
-                axe_y = knight_y + 50
+                axe_y = knight_y + 50   # Sotto il personaggio
                 current_axe = pygame.transform.rotate(axe_frames[attack_frame_index], -90)
             
             screen.blit(current_axe, (axe_x, axe_y))
        
-        # HUD
+        # ---- HUD (interfaccia in sovrimpressione) ----
         font = pygame.font.Font(None, 36)
         level_text = font.render(f"LIVELLO {level_number} | ESC = Menu | SPAZIO = Attacco", True, (255, 255, 255))
         screen.blit(level_text, (10, 10))
        
+        # Presenta il frame completato a schermo (doppio buffer)
         pygame.display.flip()
-        clock.tick(60)
+        clock.tick(60)  # Limita a 60 FPS per avere un gioco consistente su qualsiasi PC
    
     return False
 
+
+# ==============================================================================
+# FUNZIONE: main
+# Punto di ingresso del programma.
+#
+# Flusso:
+#   1. Inizializza pygame e crea la finestra
+#   2. Mostra la start screen
+#   3. Loop principale: mostra selezione livelli → avvia il gioco → ripeti
+#      (il loop si interrompe solo se il giocatore chiude la finestra)
+# ==============================================================================
 def main():
     pygame.init()
     screen = pygame.display.set_mode((1920, 1020))
@@ -516,11 +636,15 @@ def main():
     game_running = True
     while game_running:
         selected_level = level_selection_screen(screen)
+        # game_loop ritorna True se l'utente ha premuto ESC (torna al menu),
+        # False se ha chiuso la finestra (esce dal programma)
         continue_playing = game_loop(screen, selected_level)
         if not continue_playing:
             game_running = False
    
     pygame.quit()
 
+
 if __name__ == "__main__":
-    main() 
+    main()
+
