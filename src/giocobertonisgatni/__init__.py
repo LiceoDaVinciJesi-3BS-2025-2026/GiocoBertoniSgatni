@@ -239,6 +239,12 @@ def game_loop(screen, level_number):
     wd, hd = sheet_walk_down.get_size()
     walk_down_frames = load_spritesheet("knight_movingspritesheet.png", wd // 5, hd // 5, 5, 5)
     walk_down_frames = [pygame.transform.scale(f, (100, 100)) for f in walk_down_frames]
+    
+    # WALK UP spritesheet (5x5) - NUOVO!
+    sheet_walk_up = pygame.image.load("pisello.png")
+    wu, hu = sheet_walk_up.get_size()
+    walk_up_frames = load_spritesheet("pisello.png", wu // 5, hu // 5, 5, 5)
+    walk_up_frames = [pygame.transform.scale(f, (100, 100)) for f in walk_up_frames]
 
     # AXE spritesheet (5x5)
     sheet_axe = pygame.image.load("ascia-spritesheet.png")
@@ -263,6 +269,10 @@ def game_loop(screen, level_number):
     walk_down_frame_index = 0
     walk_down_timer = 0
     walk_down_speed = 4
+    
+    walk_up_frame_index = 0
+    walk_up_timer = 0
+    walk_up_speed = 4
 
     # Attacco
     is_attacking = False
@@ -405,6 +415,8 @@ def game_loop(screen, level_number):
             walk_down_frame_index = 0
             walk_down_timer = 0
             idle_timer += 1
+            walk_up_timer = 0
+            idle_timer += 1
             if idle_timer >= idle_speed:
                 idle_timer = 0
                 idle_frame_index = (idle_frame_index + 1) % len(idle_frames)
@@ -427,6 +439,15 @@ def game_loop(screen, level_number):
                 if walk_down_timer >= walk_down_speed:
                     walk_down_timer = 0
                     walk_down_frame_index = (walk_down_frame_index + 1) % len(walk_down_frames)
+            elif direction == "up":
+                walk_side_frame_index = 0
+                walk_side_timer = 0
+                walk_down_frame_index = 0
+                walk_down_timer = 0
+                walk_up_timer += 1
+                if walk_up_timer >= walk_up_speed:
+                    walk_up_timer = 0
+                    walk_up_frame_index = (walk_up_frame_index + 1) % len(walk_up_frames)
        
         # Collisioni
         knight_rect = pygame.Rect(knight_x + 30, knight_y + 40, 40, 50)
@@ -450,8 +471,7 @@ def game_loop(screen, level_number):
             frame = pygame.transform.flip(walk_side_frames[walk_side_frame_index], flip_left, False)
             screen.blit(frame, (knight_x, knight_y))
         elif direction == "up":
-            bob = int(math.sin(pygame.time.get_ticks() * 0.01) * 4)
-            screen.blit(knight_back, (knight_x, knight_y + bob))
+            screen.blit(walk_up_frames[walk_up_frame_index], (knight_x, knight_y))
         elif direction == "down":
             screen.blit(walk_down_frames[walk_down_frame_index], (knight_x, knight_y))
         

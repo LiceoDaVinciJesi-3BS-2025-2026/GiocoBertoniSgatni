@@ -1,11 +1,3 @@
-1)sistemare grandezza schermo e hitboxes da rifare usando l'editor dell'altra volta
+per la crezione delle immagini, https://app.scenario.com/
 
-2)creare ultima animazione personaggio (verso l'alto)
-
-3)sistemare ascia (facoltativo)
-
-4)implementare codice per nemico, farlo spawnare dove le hitbox lo permettono e farlo seguire il knight
-
-5)implementare sistema vite e come uscire dal gioco una volta che perdi (o cmq il che cosa fare quando perdi) <333
-
-6)fare estetica nemico e animazioni nemico
+autosprite per animare il personaggio
