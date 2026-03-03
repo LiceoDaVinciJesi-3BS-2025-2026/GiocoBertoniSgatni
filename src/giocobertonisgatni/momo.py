@@ -217,6 +217,10 @@ def game_loop(screen, level_number):
         background = pygame.image.load("castello_livello_3.jpg")
    
     background = pygame.transform.scale(background, (1920, 1020))
+   
+    # Carica sprite statiche
+    knight_back = pygame.image.load("knight_180_degrees_nosfondo.png")
+    knight_back = pygame.transform.scale(knight_back, (100, 100))
 
     # IDLE spritesheet (5x5)
     sheet_idle = pygame.image.load("knight-spritesheet.png")
@@ -231,15 +235,15 @@ def game_loop(screen, level_number):
     walk_side_frames = [pygame.transform.scale(f, (100, 100)) for f in walk_side_frames]
 
     # WALK DOWN spritesheet (5x5)
-    sheet_walk_down = pygame.image.load("knight-movingspritesheet_.png")
+    sheet_walk_down = pygame.image.load("knight_movingspritesheet.png")
     wd, hd = sheet_walk_down.get_size()
-    walk_down_frames = load_spritesheet("knight-movingspritesheet_.png", wd // 5, hd // 5, 5, 5)
+    walk_down_frames = load_spritesheet("knight_movingspritesheet.png", wd // 5, hd // 5, 5, 5)
     walk_down_frames = [pygame.transform.scale(f, (100, 100)) for f in walk_down_frames]
-
+    
     # WALK UP spritesheet (5x5) - NUOVO!
-    sheet_walk_up = pygame.image.load("animation-sequence.png")
+    sheet_walk_up = pygame.image.load("pisello.png")
     wu, hu = sheet_walk_up.get_size()
-    walk_up_frames = load_spritesheet("animation-sequence.png", wu // 5, hu // 5, 5, 5)
+    walk_up_frames = load_spritesheet("pisello.png", wu // 5, hu // 5, 5, 5)
     walk_up_frames = [pygame.transform.scale(f, (100, 100)) for f in walk_up_frames]
 
     # AXE spritesheet (5x5)
@@ -265,7 +269,7 @@ def game_loop(screen, level_number):
     walk_down_frame_index = 0
     walk_down_timer = 0
     walk_down_speed = 4
-
+    
     walk_up_frame_index = 0
     walk_up_timer = 0
     walk_up_speed = 4
@@ -410,7 +414,7 @@ def game_loop(screen, level_number):
             walk_side_timer = 0
             walk_down_frame_index = 0
             walk_down_timer = 0
-            walk_up_frame_index = 0
+            idle_timer += 1
             walk_up_timer = 0
             idle_timer += 1
             if idle_timer >= idle_speed:
@@ -424,8 +428,6 @@ def game_loop(screen, level_number):
             if direction in ("left", "right"):
                 walk_down_frame_index = 0
                 walk_down_timer = 0
-                walk_up_frame_index = 0
-                walk_up_timer = 0
                 walk_side_timer += 1
                 if walk_side_timer >= walk_side_speed:
                     walk_side_timer = 0
@@ -433,8 +435,6 @@ def game_loop(screen, level_number):
             elif direction == "down":
                 walk_side_frame_index = 0
                 walk_side_timer = 0
-                walk_up_frame_index = 0
-                walk_up_timer = 0
                 walk_down_timer += 1
                 if walk_down_timer >= walk_down_speed:
                     walk_down_timer = 0
@@ -523,4 +523,4 @@ def main():
     pygame.quit()
 
 if __name__ == "__main__":
-    main()
+    main() 
