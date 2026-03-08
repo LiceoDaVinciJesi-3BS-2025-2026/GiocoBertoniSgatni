@@ -1,7 +1,72 @@
 # progettone pazzo sgravato
 import pygame
 import math
+import random
 
+# ==============================================================================
+# FUNZIONE: carica_record
+# Legge il file record.txt e restituisce i record salvati per ogni livello.
+#
+# Il file ha una riga per livello nel formato "livello:tempo", esempio:
+#   1:23.5
+#   2:None
+#   3:41.0
+#
+# Ritorna un dizionario {1: float/None, 2: float/None, 3: float/None}
+# dove None significa che quel livello non è mai stato completato.
+# ==============================================================================
+def carica_record():
+    f = open("record.txt", "r")
+    contenuto = f.read()
+    f.close()
+    
+    righe = contenuto.splitlines()
+    record = {1: None, 2: None, 3: None}
+    
+    for riga in righe:
+        parti = riga.split(":")
+        livello = int(parti[0])
+        valore = parti[1]
+        
+        if valore == "None":
+            record[livello] = None
+        else:
+            record[livello] = float(valore)
+    
+    return record
+
+
+# ==============================================================================
+# FUNZIONE: salva_record
+# Confronta il tempo appena fatto con il record salvato per quel livello.
+# Se è migliore (o se non c'era ancora nessun record) aggiorna il file.
+#
+# Parametri:
+#   level_number → il livello appena completato (1, 2 o 3)
+#   tempo        → il tempo impiegato in secondi (float)
+#
+# Ritorna True se è un nuovo record, False se il record precedente era migliore.
+# ==============================================================================
+def salva_record(level_number, tempo):
+    record = carica_record()
+    
+    # Nessun record precedente oppure tempo migliore
+    if record[level_number] is None:
+        nuovo = True
+    elif tempo < record[level_number]:
+        nuovo = True
+    else:
+        nuovo = False
+    
+    if nuovo:
+        record[level_number] = tempo
+        
+        f = open("record.txt", "w")
+        for k, v in record.items():
+            f.write(f"{k}:{v}\n")
+        f.close()
+    
+    return nuovo
 # ==============================================================================
 # FUNZIONE: load_spritesheet
 # Serve per ritagliare i singoli frame da uno spritesheet (una grande immagine
@@ -34,6 +99,7 @@ def load_spritesheet(path, frame_width, frame_height, cols, rows):
     return frames
 
 
+
 # ==============================================================================
 # FUNZIONE: start_screen
 # Mostra la schermata iniziale del gioco con titolo, sottotitolo e bottone GIOCA.
@@ -52,7 +118,7 @@ def start_screen(screen):
    
     # Overlay semitrasparente nero sopra lo sfondo per far risaltare il testo
     overlay = pygame.Surface((1920, 1020))
-    overlay.set_alpha(150)  # 0 = invisibile, 255 = opaco
+    overlay.set_alpha(150) # 0 = invisibile, 255 = opaco
     overlay.fill((0, 0, 0))
    
     title_font = pygame.font.Font(None, 120)
@@ -71,17 +137,16 @@ def start_screen(screen):
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
-           
-            # Click sul bottone GIOCA
+            # Click sul bottone GIOCA    
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if button_rect.collidepoint(event.pos):
                     waiting = False
-           
+            
             # Scorciatoia da tastiera per avviare
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
                     waiting = False
-       
+        
         # Calcola offset bobbing: oscillazione sinusoidale basata sul tempo in ms
         title_bob = math.sin(pygame.time.get_ticks() * 0.003) * 10
        
@@ -95,7 +160,7 @@ def start_screen(screen):
         subtitle_text = subtitle_font.render("La Prova del Templare", True, (200, 200, 200))
         subtitle_rect = subtitle_text.get_rect(center=(960, 400))
         screen.blit(subtitle_text, subtitle_rect)
-       
+        
         # Hover effect: il bottone cambia colore quando ci passa il mouse sopra
         mouse_pos = pygame.mouse.get_pos()
         if button_rect.collidepoint(mouse_pos):
@@ -106,7 +171,7 @@ def start_screen(screen):
             text_color = (255, 255, 255)
        
         pygame.draw.rect(screen, button_color, button_rect, border_radius=15)
-        pygame.draw.rect(screen, (255, 215, 0), button_rect, 3, border_radius=15)  # Bordo dorato
+        pygame.draw.rect(screen, (255, 215, 0), button_rect, 3, border_radius=15)# Bordo dorato
        
         play_text = button_font.render("GIOCA", True, text_color)
         play_rect = play_text.get_rect(center=button_rect.center)
@@ -124,6 +189,78 @@ def start_screen(screen):
         pygame.display.flip()
         clock.tick(60)
 
+# ==============================================================================
+# FUNZIONE: death_screen
+# Mostra la schermata di morte quando il giocatore esaurisce le vite.
+#
+# Mostra un overlay rosso con fade-in animato, il titolo "SEI MORTO" pulsante,
+# e due bottoni cliccabili: RIPROVA (rigioca lo stesso livello) e MENU (torna
+# alla selezione livelli). Supporta anche i tasti R e ESC come scorciatoie.
+#
+# Parametri:
+#   screen       → la Surface principale di pygame su cui disegnare
+#   level_number → il livello in cui il giocatore è morto (mostrato nel testo)
+#
+# Ritorna 'retry' se vuole riprovare, 'menu' se torna al menu, 'quit' se chiude.
+# ==============================================================================
+def death_screen(screen, level_number):
+    overlay = pygame.Surface((1920, 1020))
+    overlay.fill((120, 0, 0))
+    title_font    = pygame.font.Font(None, 180)
+    subtitle_font = pygame.font.Font(None, 60)
+    button_font   = pygame.font.Font(None, 55)
+    retry_rect = pygame.Rect(560,  600, 350, 90)
+    menu_rect  = pygame.Rect(1010, 600, 350, 90)
+    clock = pygame.time.Clock()
+    alpha = 0
+    fade_done = False
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return 'quit'
+            if event.type == pygame.MOUSEBUTTONDOWN and fade_done:
+                if retry_rect.collidepoint(event.pos):
+                    return 'retry'
+                if menu_rect.collidepoint(event.pos):
+                    return 'menu'
+            if event.type == pygame.KEYDOWN and fade_done:
+                if event.key == pygame.K_r:
+                    return 'retry'
+                if event.key == pygame.K_ESCAPE:
+                    return 'menu'
+        if not fade_done:
+            alpha = min(alpha + 3, 180)
+            if alpha >= 180:
+                fade_done = True
+        screen.fill((15, 0, 0))
+        overlay.set_alpha(alpha)
+        screen.blit(overlay, (0, 0))
+        pulse = math.sin(pygame.time.get_ticks() * 0.004) * 8
+        shadow = title_font.render("SEI MORTO", True, (60, 0, 0))
+        screen.blit(shadow, shadow.get_rect(center=(964, 304 + pulse)))
+        title = title_font.render("SEI MORTO", True, (220, 30, 30))
+        screen.blit(title, title.get_rect(center=(960, 300 + pulse)))
+        sub = subtitle_font.render(f"Il tuo cammino termina al Livello {level_number}...", True, (180, 120, 120))
+        screen.blit(sub, sub.get_rect(center=(960, 460)))
+        if fade_done:
+            mouse_pos = pygame.mouse.get_pos()
+            rc  = (220, 180, 0) if retry_rect.collidepoint(mouse_pos) else (80, 80, 80)
+            rtc = (0, 0, 0)     if retry_rect.collidepoint(mouse_pos) else (255, 255, 255)
+            pygame.draw.rect(screen, rc, retry_rect, border_radius=12)
+            pygame.draw.rect(screen, (220, 180, 0), retry_rect, 3, border_radius=12)
+            rt = button_font.render("RIPROVA", True, rtc)
+            screen.blit(rt, rt.get_rect(center=retry_rect.center))
+            mc  = (220, 180, 0) if menu_rect.collidepoint(mouse_pos) else (80, 80, 80)
+            mtc = (0, 0, 0)     if menu_rect.collidepoint(mouse_pos) else (255, 255, 255)
+            pygame.draw.rect(screen, mc, menu_rect, border_radius=12)
+            pygame.draw.rect(screen, (220, 180, 0), menu_rect, 3, border_radius=12)
+            mt = button_font.render("MENU", True, mtc)
+            screen.blit(mt, mt.get_rect(center=menu_rect.center))
+            hint_font = pygame.font.Font(None, 35)
+            hint = hint_font.render("R = Riprova  |  ESC = Menu", True, (120, 80, 80))
+            screen.blit(hint, hint.get_rect(center=(960, 730)))
+        pygame.display.flip()
+        clock.tick(60)
 
 # ==============================================================================
 # FUNZIONE: level_selection_screen
@@ -135,7 +272,7 @@ def start_screen(screen):
 # ==============================================================================
 def level_selection_screen(screen):
     """Schermata di selezione livelli - ritorna il numero del livello scelto (1, 2, o 3)"""
-   
+    
     # Carica le anteprime dei 3 livelli
     forest_map = pygame.image.load("immagini/foresta_livello_1.jpg")
     village_map = pygame.image.load("immagini/villaggio_livello_2.jpg")
@@ -146,7 +283,7 @@ def level_selection_screen(screen):
     forest_preview = pygame.transform.scale(forest_map, preview_size)
     village_preview = pygame.transform.scale(village_map, preview_size)
     castle_preview = pygame.transform.scale(castle_map, preview_size)
-   
+    
     # Rettangoli cliccabili per ogni livello (più grandi delle anteprime
     # perché includono anche il testo descrittivo sotto)
     level1_rect = pygame.Rect(100, 250, 500, 500)
@@ -176,7 +313,7 @@ def level_selection_screen(screen):
                     return 2
                 elif level3_rect.collidepoint(mouse_pos):
                     return 3
-           
+            
             # Selezione rapida da tastiera
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_1:
@@ -285,59 +422,59 @@ def game_loop(screen, level_number):
         background = pygame.image.load("immagini/castello_livello_3.jpg")
    
     background = pygame.transform.scale(background, (1920, 1020))
-   
+
     # ---- CARICAMENTO SPRITE E ANIMAZIONI ----
 
-    # Sprite statica del cavaliere visto da dietro (non usata nell'animazione attuale,
-    # ma disponibile per usi futuri o cutscene)
     knight_back = pygame.image.load("personaggio/knight_180_degrees_nosfondo.png")
     knight_back = pygame.transform.scale(knight_back, (100, 100))
 
-    # Animazione IDLE (fermo): griglia 5 colonne x 5 righe = 25 frame
-    # La dimensione di ogni frame si calcola dividendo l'immagine totale per il numero di celle
     sheet_idle = pygame.image.load("personaggio/knight-spritesheet.png")
     w, h = sheet_idle.get_size()
     idle_frames = load_spritesheet("personaggio/knight-spritesheet.png", w // 5, h // 5, 5, 5)
     idle_frames = [pygame.transform.scale(f, (100, 100)) for f in idle_frames]
 
-    # Animazione CAMMINATA LATERALE (sinistra/destra): griglia 5x5
-    # Il flip orizzontale gestirà la direzione sinistra (vedi più avanti nel draw)
     sheet_walk_side = pygame.image.load("personaggio/knight-removebg-preview-spritesheet.png")
     ws, hs = sheet_walk_side.get_size()
     walk_side_frames = load_spritesheet("personaggio/knight-removebg-preview-spritesheet.png", ws // 5, hs // 5, 5, 5)
     walk_side_frames = [pygame.transform.scale(f, (100, 100)) for f in walk_side_frames]
 
-    # Animazione CAMMINATA GIÙ: griglia 5x5
     sheet_walk_down = pygame.image.load("personaggio/knight_movingspritesheet.png")
     wd, hd = sheet_walk_down.get_size()
     walk_down_frames = load_spritesheet("personaggio/knight_movingspritesheet.png", wd // 5, hd // 5, 5, 5)
     walk_down_frames = [pygame.transform.scale(f, (100, 100)) for f in walk_down_frames]
     
-    # Animazione CAMMINATA SU: griglia 5x5
     sheet_walk_up = pygame.image.load("personaggio/pisello.png")
     wu, hu = sheet_walk_up.get_size()
     walk_up_frames = load_spritesheet("personaggio/pisello.png", wu // 5, hu // 5, 5, 5)
     walk_up_frames = [pygame.transform.scale(f, (100, 100)) for f in walk_up_frames]
 
-    # Animazione ASCIA (attacco): griglia 5x5, dimensione ridotta rispetto al personaggio
     sheet_axe = pygame.image.load("personaggio/ascia-spritesheet.png")
     axe_w, axe_h = sheet_axe.get_size()
     axe_frames = load_spritesheet("personaggio/ascia-spritesheet.png", axe_w // 5, axe_h // 5, 5, 5)
     axe_frames = [pygame.transform.scale(f, (60, 60)) for f in axe_frames]
 
-    # ---- POSIZIONE INIZIALE DEL CAVALIERE (centro schermo) ----
+    # ---- CARICAMENTO SPRITESHEET UGO (nemico) ----
+    # ugo-walk-v1.png: griglia 5x5 = 25 frame di animazione walk
+    # Lo sfondo nero viene rimosso con set_colorkey
+    sheet_ugo = pygame.image.load("nemico/ugo-walk-v1.png")
+    ugo_w, ugo_h = sheet_ugo.get_size()
+    ugo_frames_raw = load_spritesheet("nemico/ugo-walk-v1.png", ugo_w // 5, ugo_h // 5, 5, 5)
+    ugo_frames = []
+    for f in ugo_frames_raw:
+        f = pygame.transform.scale(f, (60, 60))
+        f.set_colorkey((0, 0, 0))  # rimuove lo sfondo nero
+        ugo_frames.append(f)
+
+    # ---- POSIZIONE INIZIALE DEL CAVALIERE ----
     knight_x = 960 - 50
     knight_y = 510 - 50
-    knight_speed = 5  # Pixel per frame
+    knight_speed = 5
+    knight_lives = 3
 
     # ---- VARIABILI DI STATO ANIMAZIONE ----
-    # Ogni animazione ha un indice (frame corrente), un timer (conta i frame),
-    # e una speed (ogni quanti frame avanzare al frame successivo).
-    # Abbassare speed = animazione più veloce.
-
     idle_frame_index = 0
     idle_timer = 0
-    idle_speed = 6  # Cambia frame ogni 6 tick di gioco
+    idle_speed = 6
 
     walk_side_frame_index = 0
     walk_side_timer = 0
@@ -346,26 +483,44 @@ def game_loop(screen, level_number):
     walk_down_frame_index = 0
     walk_down_timer = 0
     walk_down_speed = 4
-    
+
     walk_up_frame_index = 0
     walk_up_timer = 0
     walk_up_speed = 4
 
     # ---- VARIABILI DI STATO ATTACCO ----
-    is_attacking = False        # True mentre l'animazione di attacco è in corso
-    attack_frame_index = 0      # Frame corrente dell'animazione ascia
-    attack_timer = 0            # Timer per avanzare i frame dell'ascia
-    attack_speed = 2            # Velocità animazione ascia (più basso = più veloce)
-    attack_cooldown = 0         # Conta i frame prima di poter attaccare di nuovo
+    is_attacking = False
+    attack_frame_index = 0
+    attack_timer = 0
+    attack_speed = 2
+    attack_cooldown = 0
     
     # ---- VARIABILI DI STATO MOVIMENTO ----
-    is_moving = False           # True se il giocatore sta muovendo il personaggio
-    direction = "down"          # Ultima direzione (usata per decidere quale sprite mostrare)
-    flip_left = False           # True se il personaggio guarda a sinistra (flip orizzontale)
+    is_moving = False
+    direction = "down"
+    flip_left = False
+
+    # ---- SISTEMA NEMICI ----
+    enemies = []
+    num_enemies = {1: 5, 2: 10, 3: 18}[level_number]
+    
+    for i in range(num_enemies):
+        enemy = {
+            'x': random.randint(100, 1700),
+            'y': random.randint(100, 800),
+            'size': 60,               # aggiornato a 60 per corrispondere allo sprite Ugo
+            'speed': 2,
+            'alive': True,
+            'anim_index': 0,          # frame corrente animazione Ugo
+            'anim_timer': 0,          # timer per avanzare i frame
+            'anim_speed': 5,          # ogni quanti tick cambia frame
+            'flip': False             # True se Ugo guarda a sinistra
+        }
+        enemies.append(enemy)
+    
+    enemy_damage_cooldown = 0
 
     # ---- OSTACOLI PER LIVELLO ----
-    # Ogni Rect definisce una zona invalicabile sulla mappa.
-    # Sono stati posizionati manualmente per corrispondere agli elementi grafici dello sfondo.
     if level_number == 1:
         obstacles = [
             pygame.Rect(564, -22, 465, 287),
@@ -429,24 +584,252 @@ def game_loop(screen, level_number):
         ]
    
     clock = pygame.time.Clock()
+    tempo_inizio = pygame.time.get_ticks()
     running = True
-   
-    # ================================================================
-    # GAME LOOP PRINCIPALE
-    # Viene eseguito 60 volte al secondo (clock.tick(60)).
-    # Ogni iterazione: gestisce eventi → aggiorna logica → disegna.
-    # ================================================================
+    
     while running:
-
         # ---- GESTIONE EVENTI ----
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-                return False  # Chiude il gioco completamente
+                return False
            
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    return True  # Torna al menu principale
+                    return True
+                if event.key == pygame.K_SPACE and not is_attacking and attack_cooldown == 0:
+                    is_attacking = True
+                    attack_frame_index = 0
+                    attack_timer = 0
+       
+        # ---- COOLDOWN ----
+        if attack_cooldown > 0:
+            attack_cooldown -= 1
+        if enemy_damage_cooldown > 0:
+            enemy_damage_cooldown -= 1
+
+        old_x = knight_x
+        old_y = knight_y
+       
+        # ---- INPUT MOVIMENTO ----
+        keys = pygame.key.get_pressed()
+        is_moving = False
+        
+        if keys[pygame.K_LEFT]:
+            knight_x -= knight_speed
+            direction = "left"
+            flip_left = True
+            is_moving = True
+        elif keys[pygame.K_RIGHT]:
+            knight_x += knight_speed
+            direction = "right"
+            flip_left = False
+            is_moving = True
+        elif keys[pygame.K_UP]:
+            knight_y -= knight_speed
+            direction = "up"
+            is_moving = True
+        elif keys[pygame.K_DOWN]:
+            knight_y += knight_speed
+            direction = "down"
+            is_moving = True
+
+        # ---- AGGIORNAMENTO ANIMAZIONE ATTACCO ----
+        if is_attacking:
+            attack_timer += 1
+            if attack_timer >= attack_speed:
+                attack_timer = 0
+                attack_frame_index += 1
+                if attack_frame_index >= len(axe_frames):
+                    is_attacking = False
+                    attack_frame_index = 0
+                    attack_cooldown = 20
+
+        # ---- AGGIORNAMENTO ANIMAZIONI MOVIMENTO/IDLE ----
+        if not is_moving:
+            walk_side_frame_index = 0
+            walk_side_timer = 0
+            walk_down_frame_index = 0
+            walk_down_timer = 0
+            walk_up_frame_index = 0
+            walk_up_timer = 0
+            idle_timer += 1
+            if idle_timer >= idle_speed:
+                idle_timer = 0
+                idle_frame_index = (idle_frame_index + 1) % len(idle_frames)
+        else:
+            idle_frame_index = 0
+            idle_timer = 0
+            if direction in ("left", "right"):
+                walk_down_frame_index = 0
+                walk_down_timer = 0
+                walk_up_frame_index = 0
+                walk_up_timer = 0
+                walk_side_timer += 1
+                if walk_side_timer >= walk_side_speed:
+                    walk_side_timer = 0
+                    walk_side_frame_index = (walk_side_frame_index + 1) % len(walk_side_frames)
+            elif direction == "down":
+                walk_side_frame_index = 0
+                walk_side_timer = 0
+                walk_up_frame_index = 0
+                walk_up_timer = 0
+                walk_down_timer += 1
+                if walk_down_timer >= walk_down_speed:
+                    walk_down_timer = 0
+                    walk_down_frame_index = (walk_down_frame_index + 1) % len(walk_down_frames)
+            elif direction == "up":
+                walk_side_frame_index = 0
+                walk_side_timer = 0
+                walk_down_frame_index = 0
+                walk_down_timer = 0
+                walk_up_timer += 1
+                if walk_up_timer >= walk_up_speed:
+                    walk_up_timer = 0
+                    walk_up_frame_index = (walk_up_frame_index + 1) % len(walk_up_frames)
+       
+        # ---- AGGIORNAMENTO NEMICI ----
+        for enemy in enemies:
+            if not enemy['alive']:
+                continue
+            
+            # Calcola direzione verso il player
+            dx = knight_x - enemy['x']
+            dy = knight_y - enemy['y']
+            distance = math.sqrt(dx**2 + dy**2)
+            
+            if distance > 0:
+                dx = dx / distance
+                dy = dy / distance
+                enemy['x'] += dx * enemy['speed']
+                enemy['y'] += dy * enemy['speed']
+                # Flip: Ugo guarda a sinistra se si muove a sinistra
+                enemy['flip'] = dx < 0
+
+            # Avanza animazione Ugo (sempre in movimento quando insegue)
+            enemy['anim_timer'] += 1
+            if enemy['anim_timer'] >= enemy['anim_speed']:
+                enemy['anim_timer'] = 0
+                enemy['anim_index'] = (enemy['anim_index'] + 1) % len(ugo_frames)
+
+            # Collisione nemico con player
+            enemy_rect = pygame.Rect(enemy['x'], enemy['y'], enemy['size'], enemy['size'])
+            knight_rect_full = pygame.Rect(knight_x, knight_y, 100, 100)
+            
+            if enemy_rect.colliderect(knight_rect_full) and enemy_damage_cooldown == 0:
+                knight_lives -= 1
+                enemy_damage_cooldown = 60
+                if knight_lives <= 0:
+                    result = death_screen(screen, level_number)
+                    if result == 'retry':
+                        return 'retry'
+                    elif result == 'quit':
+                        return False
+                    else:
+                        return True
+            
+            # Collisione ascia con nemico
+            if is_attacking:
+                if direction == "right":
+                    axe_rect = pygame.Rect(knight_x + 55, knight_y + 30, 60, 60)
+                elif direction == "left":
+                    axe_rect = pygame.Rect(knight_x - 15, knight_y + 30, 60, 60)
+                elif direction == "up":
+                    axe_rect = pygame.Rect(knight_x + 20, knight_y - 10, 60, 60)
+                else:
+                    axe_rect = pygame.Rect(knight_x + 20, knight_y + 50, 60, 60)
+                
+                if enemy_rect.colliderect(axe_rect):
+                    enemy['alive'] = False
+       
+        # ---- COLLISIONI CON OSTACOLI ----
+        knight_rect = pygame.Rect(knight_x + 30, knight_y + 40, 40, 50)
+        for obstacle in obstacles:
+            if knight_rect.colliderect(obstacle):
+                knight_x = old_x
+                knight_y = old_y
+                break
+       
+        # ---- LIMITI DELLO SCHERMO ----
+        knight_x = max(0, min(knight_x, 1820))
+        knight_y = max(0, min(knight_y, 920))
+       
+        # ================================================================
+        # RENDERING
+        # ================================================================
+        screen.blit(background, (0, 0))
+       
+        # ---- DISEGNO NEMICI (Ugo animato) ----
+        for enemy in enemies:
+            if enemy['alive']:
+                # Prende il frame corrente dell'animazione
+                ugo_frame = ugo_frames[enemy['anim_index']]
+                # Flip orizzontale se Ugo si muove a sinistra
+                if enemy['flip']:
+                    ugo_frame = pygame.transform.flip(ugo_frame, True, False)
+                screen.blit(ugo_frame, (enemy['x'], enemy['y']))
+       
+        # ---- DISEGNO CAVALIERE ----
+        if not is_moving:
+            screen.blit(idle_frames[idle_frame_index], (knight_x, knight_y))
+        elif direction in ("left", "right"):
+            frame = pygame.transform.flip(walk_side_frames[walk_side_frame_index], flip_left, False)
+            screen.blit(frame, (knight_x, knight_y))
+        elif direction == "up":
+            screen.blit(walk_up_frames[walk_up_frame_index], (knight_x, knight_y))
+        elif direction == "down":
+            screen.blit(walk_down_frames[walk_down_frame_index], (knight_x, knight_y))
+        
+        # ---- DISEGNO ASCIA ----
+        if is_attacking:
+            if direction == "right":
+                axe_x = knight_x + 55
+                axe_y = knight_y + 30
+                current_axe = axe_frames[attack_frame_index]
+            elif direction == "left":
+                axe_x = knight_x - 15
+                axe_y = knight_y + 30
+                current_axe = pygame.transform.flip(axe_frames[attack_frame_index], True, False)
+            elif direction == "up":
+                axe_x = knight_x + 20
+                axe_y = knight_y - 10
+                current_axe = pygame.transform.rotate(axe_frames[attack_frame_index], 90)
+            else:
+                axe_x = knight_x + 20
+                axe_y = knight_y + 50
+                current_axe = pygame.transform.rotate(axe_frames[attack_frame_index], -90)
+            
+            screen.blit(current_axe, (axe_x, axe_y))
+       
+        # ---- HUD ----
+        font = pygame.font.Font(None, 36)
+        lives_text = font.render(f"Vite: {'❤️ ' * knight_lives}", True, (255, 255, 255))
+        screen.blit(lives_text, (10, 50))
+        enemies_alive = sum(1 for e in enemies if e['alive'])
+        enemies_text = font.render(f"Nemici: {enemies_alive}/{len(enemies)}", True, (255, 255, 255))
+        screen.blit(enemies_text, (10, 85))
+        level_text = font.render(f"LIVELLO {level_number} | ESC = Menu | SPAZIO = Attacco", True, (255, 255, 255))
+        screen.blit(level_text, (10, 10))
+        
+        pygame.display.flip()
+        clock.tick(60)
+   
+    return False
+    # ================================================================
+    # GAME LOOP PRINCIPALE
+    # Viene eseguito 60 volte al secondo (clock.tick(60)).
+    # Ogni iterazione: gestisce eventi -> aggiorna logica -> disegna.
+    # ================================================================
+    while running:
+        # ---- GESTIONE EVENTI ----
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                return False # Chiude il gioco completamente
+           
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return True # Torna al menu principale
                 # Avvia attacco solo se non sta già attaccando e il cooldown è scaduto
                 if event.key == pygame.K_SPACE and not is_attacking and attack_cooldown == 0:
                     is_attacking = True
@@ -457,6 +840,9 @@ def game_loop(screen, level_number):
         # Decrementa ogni frame finché non torna a 0 (permette nuovo attacco)
         if attack_cooldown > 0:
             attack_cooldown -= 1
+        
+        if enemy_damage_cooldown > 0:
+            enemy_damage_cooldown -= 1
 
         # ---- SALVATAGGIO POSIZIONE PRECEDENTE ----
         # Serve per il sistema di collisioni: se il cavaliere finisce dentro un ostacolo,
@@ -473,7 +859,7 @@ def game_loop(screen, level_number):
         if keys[pygame.K_LEFT]:
             knight_x -= knight_speed
             direction = "left"
-            flip_left = True   # La sprite cammina verso destra di default → flippiamo
+            flip_left = True
             is_moving = True
         elif keys[pygame.K_RIGHT]:
             knight_x += knight_speed
@@ -500,15 +886,15 @@ def game_loop(screen, level_number):
                 if attack_frame_index >= len(axe_frames):
                     is_attacking = False
                     attack_frame_index = 0
-                    attack_cooldown = 20  # ~0.33 secondi a 60 FPS prima del prossimo attacco
+                    attack_cooldown = 20 # ~0.33 secondi a 60 FPS prima del prossimo attacco
 
         # ---- AGGIORNAMENTO ANIMAZIONI MOVIMENTO/IDLE ----
         if not is_moving:
-            # Reset delle animazioni di movimento quando il personaggio si ferma
             walk_side_frame_index = 0
             walk_side_timer = 0
             walk_down_frame_index = 0
             walk_down_timer = 0
+            walk_up_frame_index = 0
             walk_up_timer = 0
             # Avanza l'animazione idle
             idle_timer += 1
@@ -520,11 +906,14 @@ def game_loop(screen, level_number):
             idle_frame_index = 0
             idle_timer = 0
             
+            
             # Avanza solo l'animazione corrispondente alla direzione attuale,
             # resettando le altre per evitare che rimangano a metà ciclo
             if direction in ("left", "right"):
                 walk_down_frame_index = 0
                 walk_down_timer = 0
+                walk_up_frame_index = 0
+                walk_up_timer = 0
                 walk_side_timer += 1
                 if walk_side_timer >= walk_side_speed:
                     walk_side_timer = 0
@@ -532,6 +921,8 @@ def game_loop(screen, level_number):
             elif direction == "down":
                 walk_side_frame_index = 0
                 walk_side_timer = 0
+                walk_up_frame_index = 0
+                walk_up_timer = 0
                 walk_down_timer += 1
                 if walk_down_timer >= walk_down_speed:
                     walk_down_timer = 0
@@ -546,6 +937,50 @@ def game_loop(screen, level_number):
                     walk_up_timer = 0
                     walk_up_frame_index = (walk_up_frame_index + 1) % len(walk_up_frames)
        
+        # Aggiorna nemici
+        for enemy in enemies:
+            if not enemy['alive']:
+                continue
+            
+            # Inseguimento player
+            dx = knight_x - enemy['x']
+            dy = knight_y - enemy['y']
+            distance = math.sqrt(dx**2 + dy**2)
+            
+            if distance > 0:
+                dx = dx / distance
+                dy = dy / distance
+                enemy['x'] += dx * enemy['speed']
+                enemy['y'] += dy * enemy['speed']
+            
+            # Collisione nemico con player
+            enemy_rect = pygame.Rect(enemy['x'], enemy['y'], enemy['size'], enemy['size'])
+            knight_rect_full = pygame.Rect(knight_x, knight_y, 100, 100)
+            
+            # ==================== Toglie 1 vita invece di danno graduale ====================
+            if enemy_rect.colliderect(knight_rect_full) and enemy_damage_cooldown == 0:
+                knight_lives -= 1
+                enemy_damage_cooldown = 60  # invincibilità di 1 secondo
+                if knight_lives <= 0:
+                    print("GAME OVER!")
+                    return True
+            # ===========================================================================================
+            
+            # ==================== Nemico muore con un colpo ====================
+            if is_attacking:
+                if direction == "right":
+                    axe_rect = pygame.Rect(knight_x + 55, knight_y + 30, 60, 60)
+                elif direction == "left":
+                    axe_rect = pygame.Rect(knight_x - 15, knight_y + 30, 60, 60)
+                elif direction == "up":
+                    axe_rect = pygame.Rect(knight_x + 20, knight_y - 10, 60, 60)
+                else:
+                    axe_rect = pygame.Rect(knight_x + 20, knight_y + 50, 60, 60)
+                
+                if enemy_rect.colliderect(axe_rect):
+                    enemy['alive'] = False  # Muore subito
+            # ================================================================================
+       
         # ---- COLLISIONI CON OSTACOLI ----
         # La hitbox del cavaliere è più piccola dello sprite (30px da sinistra, 40px dall'alto)
         # per avere collisioni più precise e non far "bloccare" il personaggio troppo presto.
@@ -555,7 +990,7 @@ def game_loop(screen, level_number):
                 # Collisione rilevata: annulla il movimento tornando alla posizione precedente
                 knight_x = old_x
                 knight_y = old_y
-                break  # Basta trovare un ostacolo, non serve controllare gli altri
+                break # Basta trovare un ostacolo, non serve controllare gli altri
        
         # ---- LIMITI DELLO SCHERMO ----
         # Impedisce al cavaliere di uscire dai bordi della finestra
@@ -567,6 +1002,12 @@ def game_loop(screen, level_number):
         # L'ordine è importante: prima lo sfondo, poi il personaggio sopra.
         # ================================================================
         screen.blit(background, (0, 0))
+       
+        # ==================== Disegna nemici senza barra vita ====================
+        for enemy in enemies:
+            if enemy['alive']:
+                pygame.draw.rect(screen, (255, 0, 0), (enemy['x'], enemy['y'], enemy['size'], enemy['size']))
+        # ====================================================================================
        
         # Sceglie quale sprite disegnare in base allo stato corrente
         if not is_moving:
@@ -586,35 +1027,74 @@ def game_loop(screen, level_number):
         # così sembra sempre coerente con la posizione del cavaliere.
         if is_attacking:
             if direction == "right":
-                axe_x = knight_x + 55   # A destra del personaggio
+                axe_x = knight_x + 55 # A destra del personaggio
                 axe_y = knight_y + 30
                 current_axe = axe_frames[attack_frame_index]
             elif direction == "left":
-                axe_x = knight_x - 15   # A sinistra del personaggio
+                axe_x = knight_x - 15 # A sinistra del personaggio
                 axe_y = knight_y + 30
                 current_axe = pygame.transform.flip(axe_frames[attack_frame_index], True, False)
             elif direction == "up":
                 axe_x = knight_x + 20
-                axe_y = knight_y - 10   # Sopra il personaggio
+                axe_y = knight_y - 10 # Sopra il personaggio
                 current_axe = pygame.transform.rotate(axe_frames[attack_frame_index], 90)
-            else:  # direction == "down"
+            else: # direction == "down"
                 axe_x = knight_x + 20
-                axe_y = knight_y + 50   # Sotto il personaggio
+                axe_y = knight_y + 50 # Sotto il personaggio
                 current_axe = pygame.transform.rotate(axe_frames[attack_frame_index], -90)
             
             screen.blit(current_axe, (axe_x, axe_y))
        
-        # ---- HUD (interfaccia in sovrimpressione) ----
+        # ==================== HUD con vite e nemici rimasti ====================
         font = pygame.font.Font(None, 36)
+        
+        # Vite (cuori o icone)
+        lives_text = font.render(f"Vite: {'❤️ ' * knight_lives}", True, (255, 255, 255))
+        screen.blit(lives_text, (10, 50))
+        
+        # Nemici rimasti
+        enemies_alive = sum(1 for e in enemies if e['alive'])
+        enemies_text = font.render(f"Nemici: {enemies_alive}/{len(enemies)}", True, (255, 255, 255))
+        screen.blit(enemies_text, (10, 85))
+        
+        #questa parte serve per far funzionare le prime due funzioni ma non va molto bene.... 
+        if enemies_alive == 0:
+            tempo_finale = round((pygame.time.get_ticks() - tempo_inizio) / 1000, 1) #arrotonda i secs
+            nuovo_record = salva_record(level_number, tempo_finale) #non so pk ma non mi carica sta cosa..
+            record = carica_record()
+            screen.fill((0, 20, 0))
+            font_big = pygame.font.Font(None, 120)
+            font_med = pygame.font.Font(None, 60)
+            font_sml = pygame.font.Font(None, 40)
+            t1 = font_big.render("LIVELLO COMPLETATO!", True, (100, 255, 100))
+            t2 = font_med.render(f"Tempo: {tempo_finale}s", True, (255, 255, 255))
+            t3 = font_med.render(f"Record: {record[level_number]}s", True, (255, 215, 0))
+            t4 = font_sml.render("INVIO = Menu", True, (150, 150, 150))
+            screen.blit(t1, t1.get_rect(center=(960, 250)))
+            screen.blit(t2, t2.get_rect(center=(960, 380)))
+            screen.blit(t3, t3.get_rect(center=(960, 460)))
+            if nuovo_record:
+                nr = font_med.render("NUOVO RECORD!", True, (255, 50, 50))
+                screen.blit(nr, nr.get_rect(center=(960, 540)))
+            screen.blit(t4, t4.get_rect(center=(960, 700)))
+            pygame.display.flip()
+            
+            while True:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        return False
+                    if event.type == pygame.KEYDOWN and event.key in (pygame.K_RETURN, pygame.K_ESCAPE):
+                        return True
+        
         level_text = font.render(f"LIVELLO {level_number} | ESC = Menu | SPAZIO = Attacco", True, (255, 255, 255))
         screen.blit(level_text, (10, 10))
-       
+        # ===================================================================================
+        
         # Presenta il frame completato a schermo (doppio buffer)
         pygame.display.flip()
-        clock.tick(60)  # Limita a 60 FPS per avere un gioco consistente su qualsiasi PC
+        clock.tick(60) # Limita a 60 FPS per avere un gioco consistente su qualsiasi PC
    
     return False
-
 
 # ==============================================================================
 # FUNZIONE: main
@@ -623,7 +1103,7 @@ def game_loop(screen, level_number):
 # Flusso:
 #   1. Inizializza pygame e crea la finestra
 #   2. Mostra la start screen
-#   3. Loop principale: mostra selezione livelli → avvia il gioco → ripeti
+#   3. Loop principale: mostra selezione livelli -> avvia il gioco -> ripeti
 #      (il loop si interrompe solo se il giocatore chiude la finestra)
 # ==============================================================================
 def main():
@@ -636,15 +1116,17 @@ def main():
     game_running = True
     while game_running:
         selected_level = level_selection_screen(screen)
-        # game_loop ritorna True se l'utente ha premuto ESC (torna al menu),
-        # False se ha chiuso la finestra (esce dal programma)
-        continue_playing = game_loop(screen, selected_level)
-        if not continue_playing:
-            game_running = False
+        while True:
+            result = game_loop(screen, selected_level)
+            if result == 'retry':
+                continue
+            elif result == True:
+                break
+            else:
+                game_running = False
+                break
    
     pygame.quit()
 
-
 if __name__ == "__main__":
     main()
-
