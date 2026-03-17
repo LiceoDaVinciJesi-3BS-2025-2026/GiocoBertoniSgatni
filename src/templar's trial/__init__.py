@@ -1,7 +1,9 @@
-# progettone pazzo sgravato
-import pygame
-import math
+# libreria Standard
 import random
+import math
+
+# libreria  pip
+import pygame
 
 # ==============================================================================
 # FUNZIONE: carica_record
