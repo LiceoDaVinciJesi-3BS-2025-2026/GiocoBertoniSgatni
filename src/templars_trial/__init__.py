@@ -8,8 +8,10 @@ import pygame
 #PlatformDirs
 from platformdirs import PlatformDirs
 
+from .resources import *
+
 dirs = PlatformDirs("templars_trial", ensure_exists=True)
-file_record = dirs.user_config_dir / "record.txt"
+file_record = dirs.user_data_path / "record.txt"
 # ==============================================================================
 # FUNZIONE: carica_record
 # Legge il file record.txt e restituisce i record salvati per ogni livello.
@@ -120,7 +122,7 @@ def load_spritesheet(path, frame_width, frame_height, cols, rows):
 def start_screen(screen):
     """Schermata di avvio del gioco"""
    
-    background = pygame.image.load("immagini/Scene_Overview.png")
+    background = pygame.image.load(get_image("Scene_Overview.png"))
     background = pygame.transform.scale(background, (1920, 1020))
    
     # Overlay semitrasparente nero sopra lo sfondo per far risaltare il testo
@@ -281,9 +283,9 @@ def level_selection_screen(screen):
     """Schermata di selezione livelli - ritorna il numero del livello scelto (1, 2, o 3)"""
     
     # Carica le anteprime dei 3 livelli
-    forest_map = pygame.image.load("immagini/foresta_livello_1.jpg")
-    village_map = pygame.image.load("immagini/villaggio_livello_2.jpg")
-    castle_map = pygame.image.load("immagini/castello_livello_3.jpg")
+    forest_map = pygame.image.load(get_image("foresta_livello_1.jpg"))
+    village_map = pygame.image.load(get_image("villaggio_livello_2.jpg"))
+    castle_map = pygame.image.load(get_image("castello_livello_3.jpg"))
    
     # Ridimensiona tutte le anteprime alla stessa dimensione
     preview_size = (500, 350)
@@ -422,50 +424,50 @@ def game_loop(screen, level_number):
    
     # ---- CARICAMENTO MAPPA ----
     if level_number == 1:
-        background = pygame.image.load("immagini/foresta_livello_1.jpg")
+        background = pygame.image.load(get_image("foresta_livello_1.jpg"))
     elif level_number == 2:
-        background = pygame.image.load("immagini/villaggio_livello_2.jpg")
+        background = pygame.image.load(get_image("villaggio_livello_2.jpg"))
     else:
-        background = pygame.image.load("immagini/castello_livello_3.jpg")
+        background = pygame.image.load(get_image("castello_livello_3.jpg"))
    
     background = pygame.transform.scale(background, (1920, 1020))
 
     # ---- CARICAMENTO SPRITE E ANIMAZIONI ----
 
-    knight_back = pygame.image.load("personaggio/knight_180_degrees_nosfondo.png")
+    knight_back = pygame.image.load(get_image("knight_180_degrees_nosfondo.png"))
     knight_back = pygame.transform.scale(knight_back, (100, 100))
 
-    sheet_idle = pygame.image.load("personaggio/knight-spritesheet.png")
+    sheet_idle = pygame.image.load(get_image("knight-spritesheet.png"))
     w, h = sheet_idle.get_size()
-    idle_frames = load_spritesheet("personaggio/knight-spritesheet.png", w // 5, h // 5, 5, 5)
+    idle_frames = load_spritesheet(get_image("knight-spritesheet.png"), w // 5, h // 5, 5, 5)
     idle_frames = [pygame.transform.scale(f, (100, 100)) for f in idle_frames]
 
-    sheet_walk_side = pygame.image.load("personaggio/knight-removebg-preview-spritesheet.png")
+    sheet_walk_side = pygame.image.load(get_image("knight-removebg-preview-spritesheet.png"))
     ws, hs = sheet_walk_side.get_size()
-    walk_side_frames = load_spritesheet("personaggio/knight-removebg-preview-spritesheet.png", ws // 5, hs // 5, 5, 5)
+    walk_side_frames = load_spritesheet(get_image("knight-removebg-preview-spritesheet.png"), ws // 5, hs // 5, 5, 5)
     walk_side_frames = [pygame.transform.scale(f, (100, 100)) for f in walk_side_frames]
 
-    sheet_walk_down = pygame.image.load("personaggio/knight_movingspritesheet.png")
+    sheet_walk_down = pygame.image.load(get_image("knight_movingspritesheet.png"))
     wd, hd = sheet_walk_down.get_size()
-    walk_down_frames = load_spritesheet("personaggio/knight_movingspritesheet.png", wd // 5, hd // 5, 5, 5)
+    walk_down_frames = load_spritesheet(get_image("knight_movingspritesheet.png"), wd // 5, hd // 5, 5, 5)
     walk_down_frames = [pygame.transform.scale(f, (100, 100)) for f in walk_down_frames]
     
-    sheet_walk_up = pygame.image.load("personaggio/pisello.png")
+    sheet_walk_up = pygame.image.load(get_image("pisello.png"))
     wu, hu = sheet_walk_up.get_size()
-    walk_up_frames = load_spritesheet("personaggio/pisello.png", wu // 5, hu // 5, 5, 5)
+    walk_up_frames = load_spritesheet(get_image("pisello.png"), wu // 5, hu // 5, 5, 5)
     walk_up_frames = [pygame.transform.scale(f, (100, 100)) for f in walk_up_frames]
 
-    sheet_axe = pygame.image.load("personaggio/ascia-spritesheet.png")
+    sheet_axe = pygame.image.load(get_image("ascia-spritesheet.png"))
     axe_w, axe_h = sheet_axe.get_size()
-    axe_frames = load_spritesheet("personaggio/ascia-spritesheet.png", axe_w // 5, axe_h // 5, 5, 5)
+    axe_frames = load_spritesheet(get_image("ascia-spritesheet.png"), axe_w // 5, axe_h // 5, 5, 5)
     axe_frames = [pygame.transform.scale(f, (60, 60)) for f in axe_frames]
 
     # ---- CARICAMENTO SPRITESHEET UGO (nemico) ----
     # ugo-walk-v1.png: griglia 5x5 = 25 frame di animazione walk
     # Lo sfondo nero viene rimosso con set_colorkey
-    sheet_ugo = pygame.image.load("nemico/ugo-walk-v1.png")
+    sheet_ugo = pygame.image.load(get_image("ugo-walk-v1.png"))
     ugo_w, ugo_h = sheet_ugo.get_size()
-    ugo_frames_raw = load_spritesheet("nemico/ugo-walk-v1.png", ugo_w // 5, ugo_h // 5, 5, 5)
+    ugo_frames_raw = load_spritesheet(get_image("ugo-walk-v1.png"), ugo_w // 5, ugo_h // 5, 5, 5)
     ugo_frames = []
     for f in ugo_frames_raw:
         f = pygame.transform.scale(f, (60, 60))
@@ -1116,7 +1118,7 @@ def game_loop(screen, level_number):
 def main():
     pygame.init()
     screen = pygame.display.set_mode((1920, 1020))
-    pygame.display.set_caption("Templar's Trial")
+    pygame.display.set_caption("Templars_ Trial")
    
     start_screen(screen)
    
