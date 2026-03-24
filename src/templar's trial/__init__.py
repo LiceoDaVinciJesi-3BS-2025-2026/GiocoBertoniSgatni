@@ -5,6 +5,11 @@ import math
 # libreria  pip
 import pygame
 
+#PlatformDirs
+from platformdirs import PlatformDirs
+
+dirs = PlatformDirs("templars_trial", ensure_exists=True)
+file_record = dirs.user_config_dir / "record.txt"
 # ==============================================================================
 # FUNZIONE: carica_record
 # Legge il file record.txt e restituisce i record salvati per ogni livello.
@@ -18,7 +23,7 @@ import pygame
 # dove None significa che quel livello non è mai stato completato.
 # ==============================================================================
 def carica_record():
-    f = open("record.txt", "r")
+    f = open(file_record, "r")
     contenuto = f.read()
     f.close()
     
@@ -63,7 +68,7 @@ def salva_record(level_number, tempo):
     if nuovo:
         record[level_number] = tempo
         
-        f = open("record.txt", "w")
+        f = open(file_record, "w")
         for k, v in record.items():
             f.write(f"{k}:{v}\n")
         f.close()

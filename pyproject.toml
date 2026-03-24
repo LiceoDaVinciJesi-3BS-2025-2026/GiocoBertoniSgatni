@@ -1,17 +1,7 @@
 [project]
-name = "templar's trial"
+name = "templars_trial"
 version = "0.1.0"
-description = "Templar's Trial è un videogioco 2D top-down sviluppato interamente da zero, in cui vestirai i panni di un cavaliere templare alle prese con tre ambientazioni uniche: una foresta oscura, un villaggio assediato e un castello reale. Muoviti tra gli ostacoli, esplora le mappe e combatti con la tua ascia in un'avventura medievale ricca di atmosfera.
-
--3 livelli giocabili con mappe, ostacoli e difficoltà diverse
--Sistema di animazioni fluido con sprite differenti per ogni direzione di movimento (su, giù, sinistra, destra) e per l'attacco
--Schermata iniziale e selezione livelli con anteprime interattive
--Collisioni precise con gli elementi dello scenario
--HUD minimale e controlli intuitivi da tastiera
-
-Il gioco è stato sviluppato in Python con la libreria Pygame. Per le risorse grafiche abbiamo usato Pixelverse per generare le immagini delle mappe e degli sfondi, e AutoSprite per creare e organizzare le spritesheet delle animazioni del personaggio e dell'ascia.
-Abbiamo usato sia Claude (Anthropic) che ChatGPT (OpenAI) per risolvere problemi di codice, ottimizzare la logica di gioco, strutturare il sistema delle collisioni e velocizzare parti dello sviluppo che da soli avrebbero richiesto molto più tempo. L'AI non ha sostituito il lavoro creativo — le idee, il design dei livelli e le scelte di gameplay sono tutte nostre — ma ci ha aiutato a imparare più in fretta e a trasformare le idee in codice funzionante.
-"
+description = "Templars_Trial è un videogioco 2D top-down sviluppato interamente da zero, in cui vestirai i panni di un cavaliere templare alle prese con tre ambientazioni"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -19,7 +9,7 @@ dependencies = [
 ]
 
 [project.scripts]
-templar's trial = "templar's trial:main"
+templar's trial = "templars_trial:main"
 
 [build-system]
 requires = ["uv_build>=0.9.28,<0.10.0"]
