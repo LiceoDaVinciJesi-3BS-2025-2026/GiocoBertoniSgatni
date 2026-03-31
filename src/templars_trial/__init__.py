@@ -1,3 +1,26 @@
+# Templar's Trial - Gioco 2D top-down in Python/Pygame dove controlli un cavaliere templare attraverso 3 livelli: foresta, villaggio e castello..
+
+#La Prova del Templare
+#Un gioco d'avventura in pixel art dove un coraggioso cavaliere templare deve attraversare tre pericolosi livelli per completare la sua prova.
+#Incarnati in un valoroso cavaliere templare e affronta tre ambientazioni sempre più difficili: dalla misteriosa Foresta Oscura, passando per il Villaggio Assediato, fino al maestoso Castello del Re. Ogni livello presenta ostacoli unici e sfide da superare!
+
+#🎮 CARATTERISTICHE
+
+#3 Livelli Completi: Foresta, Villaggio e Castello con mappe uniche
+#Animazioni Fluide: Sprite animate per camminata e idle del cavaliere
+#Controlli Responsive: Movimento a 4 direzioni con animazioni dedicate
+#Sistema di Collisioni: Ostacoli realistici che bloccano il percorso
+#Menu Interattivi: Schermata home e selezione livelli con preview
+#Pixel Art: Grafica retro in stile pixel art
+
+# License: See LICENSE file in the project root for details.
+
+# Authors: 
+# Giovanni Bertoni <giobbobertonz@gmail.com>
+# Amin Sgatini <boh>
+
+
+
 # libreria Standard
 import random
 import math

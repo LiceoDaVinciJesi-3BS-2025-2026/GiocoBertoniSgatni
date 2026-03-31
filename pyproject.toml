@@ -1,6 +1,6 @@
 [project]
 name = "templars_trial"
-version = "0.1.0"
+version = "0.2.0"
 description = "Templars_Trial è un videogioco 2D top-down sviluppato interamente da zero, in cui vestirai i panni di un cavaliere templare alle prese con tre ambientazioni"
 readme = "README.md"
 requires-python = ">=3.11"
